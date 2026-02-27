@@ -190,6 +190,56 @@ visualizations — is a direct challenge to that premise. The Brighthouse
 dashboard is what "the old way" looks like: rigid, requires specialists to
 modify, and can only answer questions it was pre-designed to answer.
 
+## Embedded Postgres for Demos and Beyond
+
+Library: `github.com/fergusstrange/embedded-postgres` — downloads and runs a
+real Postgres binary in a temp directory. Pure Go API, no Docker, no system
+install. Already proven in production test suites (used in the DMS project at
+Brighthouse Financial for integration tests with `t.TempDir()` isolation).
+
+### The trick: Postgres as a subcommand
+
+Instead of requiring users to install and configure Postgres separately, embed
+it and expose it as a CLI subcommand:
+
+```bash
+# Start an embedded Postgres, get connection info as JSON
+$ lighthouse postgres --standalone
+{"host": "127.0.0.1", "port": 54321, "database": "lighthouse", "user": "lighthouse", "password": "..."}
+
+# Pipe that into the main server
+$ lighthouse serve --db-config <(lighthouse postgres --standalone)
+
+# Or connect with psql to poke around
+$ psql "$(lighthouse postgres --standalone | jq -r '"host=\(.host) port=\(.port) dbname=\(.database)"')"
+```
+
+### Why this matters
+
+- **Single binary carries its own database.** No Docker, no docker-compose, no
+  "install Postgres first," no dev-ops ticket. Consistent with Principle 1
+  (single deployment bundle) and Principle 5 (CLI flags, no env vars).
+- **Sales demos run on a laptop** with one command.
+- **Integration tests** spin up a fresh instance per test suite — real Postgres
+  semantics (CTEs, window functions, `jsonb`, the whole thing), no SQLite
+  dialect lies.
+- **Developer onboarding**: `./build.sh && ./bin/lighthouse serve` — done.
+- **"Try before buy"**: prospects can evaluate the system without any
+  infrastructure. The standalone Postgres subcommand returns JSON connection
+  info that other tools (psql, pgAdmin, DBeaver) can consume.
+
+### When to use which
+
+- **SQLite in-memory** (prototype-1): Zero setup, restarts in milliseconds,
+  good enough when the SQL dialect doesn't matter. Right for rapid iteration.
+- **Embedded Postgres** (production path): Real Postgres semantics, schema
+  matches production exactly, testable with real constraints and types.
+  Right for anything beyond prototyping.
+
+The Postgres binary is just another embedded asset, like the static files. The
+transition from SQLite to Postgres is a database driver swap + DDL adjustment,
+not an architecture change.
+
 ## Technical Debt
 
 - Session and widget storage is in-memory — lost on restart
