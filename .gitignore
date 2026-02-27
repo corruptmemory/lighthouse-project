@@ -3,3 +3,9 @@
 
 # Screenshots (regenerable from the HTML mockups)
 mockups/*.png
+
+# Prototype build artifacts
+prototype-1/bin/
+
+# Test screenshots
+*.png
