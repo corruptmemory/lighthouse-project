@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lighthouse ERP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Nunito+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ─── Variables ──────────────────────────────── */
+:root {
+  --bg: #F5F2EC;
+  --bg-card: #FFFFFF;
+  --bg-sidebar: #1A1A1A;
+  --bg-sidebar-hover: #2A2A2A;
+  --bg-sidebar-active: #333;
+  --text: #2D2A26;
+  --text-secondary: #7A756D;
+  --text-sidebar: #B0AAA0;
+  --text-sidebar-active: #F5F2EC;
+  --border: #E2DDD4;
+  --border-light: #EDEAE4;
+  --accent-lt: #B8860B;
+  --accent-lt-bg: #FBF5E6;
+  --accent-lp: #2C5F8A;
+  --accent-lp-bg: #E8F0F7;
+  --success: #4A7C59;
+  --success-bg: #EDF5EF;
+  --warning: #C4860C;
+  --warning-bg: #FDF5E6;
+  --danger: #B44040;
+  --danger-bg: #FBEFEF;
+  --info: #5B7FA6;
+  --info-bg: #EEF3F8;
+  --radius: 8px;
+  --radius-sm: 5px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+  --font-display: 'Bricolage Grotesque', serif;
+  --font-body: 'Nunito Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --sidebar-w: 240px;
+}
+
+/* ─── Reset ──────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+}
+
+/* ─── Sidebar ────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: var(--bg-sidebar);
+  color: var(--text-sidebar);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  z-index: 100;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid #333;
+}
+.sidebar-logo h1 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-sidebar-active);
+  letter-spacing: -0.02em;
+}
+.sidebar-logo span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-sidebar);
+  display: block;
+  margin-top: 2px;
+}
+.sidebar-nav {
+  padding: 16px 0;
+  flex: 1;
+}
+.sidebar-section {
+  padding: 0 12px;
+  margin-bottom: 8px;
+}
+.sidebar-section-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #666;
+  padding: 8px 12px 6px;
+  font-weight: 600;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-sidebar);
+  text-decoration: none;
+  position: relative;
+}
+.nav-item:hover { background: var(--bg-sidebar-hover); color: var(--text-sidebar-active); }
+.nav-item.active {
+  background: var(--bg-sidebar-active);
+  color: var(--text-sidebar-active);
+}
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -12px; top: 4px; bottom: 4px;
+  width: 3px;
+  background: var(--accent-lt);
+  border-radius: 0 3px 3px 0;
+}
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+.nav-item.active .nav-icon { opacity: 1; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-family: var(--font-mono);
+}
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #333;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar-footer .avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ccc;
+}
+.sidebar-footer .user-info { font-size: 0.8rem; }
+.sidebar-footer .user-name { color: var(--text-sidebar-active); font-weight: 600; }
+.sidebar-footer .user-role { color: #666; font-size: 0.7rem; }
+
+/* ─── Main ───────────────────────────────────── */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-height: 100vh;
+}
+.topbar {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.topbar-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.topbar-breadcrumb {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: text;
+  min-width: 200px;
+}
+.search-box kbd {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: auto;
+}
+.topbar-icon {
+  width: 36px; height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.15s;
+  position: relative;
+}
+.topbar-icon:hover { background: var(--bg); }
+.topbar-icon .dot {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 7px; height: 7px;
+  background: var(--danger);
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+}
+.content {
+  padding: 28px 32px;
+}
+
+/* ─── Page visibility ────────────────────────── */
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ─── Cards & KPIs ───────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.kpi-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kpi-value {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.kpi-sub {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.kpi-change {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.kpi-change.up { background: var(--success-bg); color: var(--success); }
+.kpi-change.down { background: var(--danger-bg); color: var(--danger); }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-light);
+}
+.card-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.card-action {
+  font-size: 0.78rem;
+  color: var(--accent-lp);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+}
+.card-action:hover { text-decoration: underline; }
+.card-body { padding: 16px 20px; }
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* ─── Tables ─────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+thead th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+tbody tr {
+  transition: background 0.1s;
+}
+tbody tr:hover {
+  background: #FAFAF7;
+}
+tbody tr:last-child td { border-bottom: none; }
+
+/* ─── Badges ─────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-lt { background: var(--accent-lt-bg); color: var(--accent-lt); }
+.badge-lp { background: var(--accent-lp-bg); color: var(--accent-lp); }
+.badge-success { background: var(--success-bg); color: var(--success); }
+.badge-warning { background: var(--warning-bg); color: var(--warning); }
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+.badge-info { background: var(--info-bg); color: var(--info); }
+.badge-neutral { background: var(--bg); color: var(--text-secondary); border: 1px solid var(--border); }
+
+/* ─── Brand dot ──────────────────────────────── */
+.brand-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.brand-dot.lt { background: var(--accent-lt); }
+.brand-dot.lp { background: var(--accent-lp); }
+
+/* ─── Mono text ──────────────────────────────── */
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+/* ─── Buttons ────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn:hover { background: var(--bg); border-color: #ccc; }
+.btn-primary {
+  background: var(--accent-lp);
+  color: #fff;
+  border-color: var(--accent-lp);
+}
+.btn-primary:hover { background: #245273; }
+.btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+
+/* ─── Filters bar ────────────────────────────── */
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.filter-chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-chip:hover { border-color: #bbb; }
+.filter-chip.active {
+  background: var(--text);
+  color: var(--bg-card);
+  border-color: var(--text);
+}
+
+/* ─── Revenue chart (CSS-only) ───────────────── */
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 130px;
+  padding: 8px 0;
+}
+.chart-bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  justify-content: flex-end;
+}
+.chart-bar-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px;
+  flex: 1;
+}
+.chart-bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+  transition: opacity 0.15s;
+}
+.chart-bar.lt { background: var(--accent-lt); }
+.chart-bar.lp { background: var(--accent-lp); }
+.chart-bar-group:hover .chart-bar { opacity: 0.8; }
+.chart-label {
+  font-size: 0.62rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ─── Status list ────────────────────────────── */
+.status-list { list-style: none; }
+.status-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 0.84rem;
+}
+.status-item:last-child { border-bottom: none; }
+.status-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+.status-count {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+/* ─── Product grid ───────────────────────────── */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+.product-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.2s;
+  cursor: pointer;
+}
+.product-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+.product-img {
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+.product-img.lt-bg { background: linear-gradient(135deg, #FDF8ED, #F7EFDA); }
+.product-img.lp-bg { background: linear-gradient(135deg, #EDF2F8, #DAE5F0); }
+.product-info { padding: 14px; }
+.product-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+.product-sku {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.product-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.product-price {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+}
+.product-stock {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ─── Progress bar ───────────────────────────── */
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ─── Subscription cards ─────────────────────── */
+.sub-stat {
+  text-align: center;
+  padding: 20px;
+}
+.sub-stat-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.sub-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* ─── Responsive ─────────────────────────────── */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ Sidebar ═══ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <h1>Lighthouse</h1>
+    <span>Enterprise Resource Planning</span>
+  </div>
+  <div class="sidebar-nav">
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Overview</div>
+      <a class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">▣</span> Dashboard
+      </a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Commerce</div>
+      <a class="nav-item" data-page="orders">
+        <span class="nav-icon">📋</span> Orders
+        <span class="nav-badge">3</span>
+      </a>
+      <a class="nav-item" data-page="products">
+        <span class="nav-icon">📦</span> Products
+      </a>
+      <a class="nav-item" data-page="inventory">
+        <span class="nav-icon">🏷</span> Inventory
+        <span class="nav-badge">12</span>
+      </a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Operations</div>
+      <a class="nav-item" data-page="subscriptions">
+        <span class="nav-icon">🔄</span> Subscriptions
+      </a>
+      <a class="nav-item" data-page="shipping">
+        <span class="nav-icon">🚚</span> Shipping
+      </a>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="avatar">JM</div>
+    <div class="user-info">
+      <div class="user-name">Jim Mitchell</div>
+      <div class="user-role">Operations Manager</div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ Main Content ═══ -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-title" id="page-title">Dashboard</span>
+      <span class="topbar-breadcrumb" id="page-breadcrumb">Overview — February 2026</span>
+    </div>
+    <div class="topbar-right">
+      <div class="search-box">
+        <span>🔍</span> Search orders, products…
+        <kbd>⌘K</kbd>
+      </div>
+      <div class="topbar-icon">
+        🔔
+        <span class="dot"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══════════════════════════════════════ -->
+    <!--              DASHBOARD                  -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="page active" id="page-dashboard">
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Revenue MTD</div>
+          <div class="kpi-value">$47,284</div>
+          <div class="kpi-sub">
+            <span class="kpi-change up">▲ 12.3%</span> vs last month
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Orders Today</div>
+          <div class="kpi-value">34</div>
+          <div class="kpi-sub">
+            <span class="brand-dot lt"></span> 21 stationery
+            <span style="margin: 0 4px">·</span>
+            <span class="brand-dot lp"></span> 13 collectibles
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Active Subscriptions</div>
+          <div class="kpi-value">847</div>
+          <div class="kpi-sub">
+            <span class="kpi-change up">▲ 4.1%</span> 23 new this month
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">⚠ Low Stock Alerts</div>
+          <div class="kpi-value" style="color: var(--danger)">12</div>
+          <div class="kpi-sub">
+            3 critical · 9 warning
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Revenue by Month</span>
+            <div style="display:flex;gap:12px;font-size:0.72rem;font-weight:600;">
+              <span style="display:flex;align-items:center;gap:4px;"><span class="brand-dot lt"></span> Leuchtturm1917</span>
+              <span style="display:flex;align-items:center;gap:4px;"><span class="brand-dot lp"></span> Lighthouse Pub.</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-bars">
+              <div class="chart-bar-group"><div class="chart-bar-stack"><div class="chart-bar lt" style="height:45%"></div><div class="chart-bar lp" style="height:30%"></div></div><span class="chart-label">Sep</span></div>
+              <div class="chart-bar-group"><div class="chart-bar-stack"><div class="chart-bar lt" style="height:50%"></div><div class="chart-bar lp" style="height:28%"></div></div><span class="chart-label">Oct</span></div>
+              <div class="chart-bar-group"><div class="chart-bar-stack"><div class="chart-bar lt" style="height:75%"></div><div class="chart-bar lp" style="height:40%"></div></div><span class="chart-label">Nov</span></div>
+              <div class="chart-bar-group"><div class="chart-bar-stack"><div class="chart-bar lt" style="height:90%"></div><div class="chart-bar lp" style="height:55%"></div></div><span class="chart-label">Dec</span></div>
+              <div class="chart-bar-group"><div class="chart-bar-stack"><div class="chart-bar lt" style="height:40%"></div><div class="chart-bar lp" style="height:35%"></div></div><span class="chart-label">Jan</span></div>
+              <div class="chart-bar-group"><div class="chart-bar-stack"><div class="chart-bar lt" style="height:48%"></div><div class="chart-bar lp" style="height:32%"></div></div><span class="chart-label">Feb</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Order Status</span>
+            <span class="card-action">View all →</span>
+          </div>
+          <div class="card-body">
+            <ul class="status-list">
+              <li class="status-item">
+                <span class="status-item-left"><span class="status-dot" style="background:var(--warning)"></span> Processing</span>
+                <span class="status-count">18</span>
+              </li>
+              <li class="status-item">
+                <span class="status-item-left"><span class="status-dot" style="background:var(--info)"></span> Awaiting Shipment</span>
+                <span class="status-count">12</span>
+              </li>
+              <li class="status-item">
+                <span class="status-item-left"><span class="status-dot" style="background:var(--accent-lp)"></span> Shipped</span>
+                <span class="status-count">43</span>
+              </li>
+              <li class="status-item">
+                <span class="status-item-left"><span class="status-dot" style="background:var(--success)"></span> Delivered</span>
+                <span class="status-count">891</span>
+              </li>
+              <li class="status-item">
+                <span class="status-item-left"><span class="status-dot" style="background:var(--danger)"></span> Returns</span>
+                <span class="status-count">7</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent orders -->
+      <div class="card" style="margin-bottom:24px">
+        <div class="card-header">
+          <span class="card-title">Recent Orders</span>
+          <span class="card-action" onclick="switchPage('orders')">View all orders →</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Order</th><th>Date</th><th>Customer</th><th>Brand</th><th>Items</th><th style="text-align:right">Total</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">#LH-4521</td><td>Feb 26</td><td>Sarah Mitchell</td><td><span class="badge badge-lt">Leuchtturm1917</span></td><td>3</td><td style="text-align:right" class="mono">$89.85</td><td><span class="badge badge-warning">Processing</span></td></tr>
+            <tr><td class="mono">#LH-4520</td><td>Feb 26</td><td>Robert Chen</td><td><span class="badge badge-lp">Lighthouse</span></td><td>1</td><td style="text-align:right" class="mono">$79.99</td><td><span class="badge badge-info">Shipped</span></td></tr>
+            <tr><td class="mono">#LH-4519</td><td>Feb 25</td><td>Emma Schneider</td><td><span class="badge badge-neutral">Mixed</span></td><td>5</td><td style="text-align:right" class="mono">$164.93</td><td><span class="badge badge-warning">Processing</span></td></tr>
+            <tr><td class="mono">#LH-4518</td><td>Feb 25</td><td>James O'Brien</td><td><span class="badge badge-lt">Leuchtturm1917</span></td><td>2</td><td style="text-align:right" class="mono">$64.90</td><td><span class="badge badge-success">Delivered</span></td></tr>
+            <tr><td class="mono">#LH-4517</td><td>Feb 25</td><td>Maria Gonzalez</td><td><span class="badge badge-lp">Lighthouse</span></td><td>3</td><td style="text-align:right" class="mono">$214.97</td><td><span class="badge badge-success">Delivered</span></td></tr>
+            <tr><td class="mono">#LH-4516</td><td>Feb 24</td><td>Thomas Klein</td><td><span class="badge badge-lt">Leuchtturm1917</span></td><td>1</td><td style="text-align:right" class="mono">$59.95</td><td><span class="badge badge-info">Shipped</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Bottom row -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Low Stock Alerts</span>
+            <span class="card-action" onclick="switchPage('inventory')">View inventory →</span>
+          </div>
+          <table>
+            <thead><tr><th>Product</th><th>SKU</th><th style="text-align:right">Stock</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Medium A5 — Sunflower</td><td class="mono">LT-NB-A5-SUN</td><td style="text-align:right" class="mono">3</td><td><span class="badge badge-danger">Critical</span></td></tr>
+              <tr><td>Drehgriffel Nr. 1 — Black</td><td class="mono">LT-WI-DG1-BLK</td><td style="text-align:right" class="mono">7</td><td><span class="badge badge-danger">Critical</span></td></tr>
+              <tr><td>QUADRUM Snaplock 41mm</td><td class="mono">LP-CS-QDR-41</td><td style="text-align:right" class="mono">11</td><td><span class="badge badge-warning">Low</span></td></tr>
+              <tr><td>KABE Supplement 2024 DE</td><td class="mono">LP-KS-2024-DE</td><td style="text-align:right" class="mono">15</td><td><span class="badge badge-warning">Low</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Subscription Renewals Due</span>
+            <span class="card-action" onclick="switchPage('subscriptions')">View all →</span>
+          </div>
+          <table>
+            <thead><tr><th>Subscriber</th><th>Plan</th><th>Renewal</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Gerald Hoffman</td><td class="mono">KABE-DE</td><td>Mar 1</td><td><span class="badge badge-warning">Due soon</span></td></tr>
+              <tr><td>Patricia Ruiz</td><td class="mono">LH-US</td><td>Mar 1</td><td><span class="badge badge-warning">Due soon</span></td></tr>
+              <tr><td>David Whitmore</td><td class="mono">KABE-CH</td><td>Mar 3</td><td><span class="badge badge-info">Upcoming</span></td></tr>
+              <tr><td>Sylvia Braun</td><td class="mono">LH-US+KABE-DE</td><td>Mar 5</td><td><span class="badge badge-info">Upcoming</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!--              ORDERS                     -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="page" id="page-orders">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div class="filters">
+          <span class="filter-chip active">All Orders</span>
+          <span class="filter-chip">Processing</span>
+          <span class="filter-chip">Shipped</span>
+          <span class="filter-chip">Delivered</span>
+          <span class="filter-chip">Returns</span>
+        </div>
+        <button class="btn btn-primary">+ New Order</button>
+      </div>
+      <div class="card">
+        <table>
+          <thead>
+            <tr><th>Order</th><th>Date</th><th>Customer</th><th>Email</th><th>Brand</th><th>Items</th><th style="text-align:right">Total</th><th>Shipping</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">#LH-4521</td><td>Feb 26, 2026</td><td>Sarah Mitchell</td><td class="mono" style="font-size:0.75rem">s.mitchell@gmail.com</td><td><span class="badge badge-lt">Leuchtturm1917</span></td><td>3</td><td style="text-align:right" class="mono">$89.85</td><td>FedEx</td><td><span class="badge badge-warning">Processing</span></td></tr>
+            <tr><td class="mono">#LH-4520</td><td>Feb 26, 2026</td><td>Robert Chen</td><td class="mono" style="font-size:0.75rem">r.chen@outlook.com</td><td><span class="badge badge-lp">Lighthouse</span></td><td>1</td><td style="text-align:right" class="mono">$79.99</td><td>USPS Priority</td><td><span class="badge badge-info">Shipped</span></td></tr>
+            <tr><td class="mono">#LH-4519</td><td>Feb 25, 2026</td><td>Emma Schneider</td><td class="mono" style="font-size:0.75rem">e.schneider@web.de</td><td><span class="badge badge-neutral">Mixed</span></td><td>5</td><td style="text-align:right" class="mono">$164.93</td><td>UPS Ground</td><td><span class="badge badge-warning">Processing</span></td></tr>
+            <tr><td class="mono">#LH-4518</td><td>Feb 25, 2026</td><td>James O'Brien</td><td class="mono" style="font-size:0.75rem">j.obrien@yahoo.com</td><td><span class="badge badge-lt">Leuchtturm1917</span></td><td>2</td><td style="text-align:right" class="mono">$64.90</td><td>USPS Flat Rate</td><td><span class="badge badge-success">Delivered</span></td></tr>
+            <tr><td class="mono">#LH-4517</td><td>Feb 25, 2026</td><td>Maria Gonzalez</td><td class="mono" style="font-size:0.75rem">m.gonzalez@icloud.com</td><td><span class="badge badge-lp">Lighthouse</span></td><td>3</td><td style="text-align:right" class="mono">$214.97</td><td>FedEx</td><td><span class="badge badge-success">Delivered</span></td></tr>
+            <tr><td class="mono">#LH-4516</td><td>Feb 24, 2026</td><td>Thomas Klein</td><td class="mono" style="font-size:0.75rem">t.klein@gmx.de</td><td><span class="badge badge-lt">Leuchtturm1917</span></td><td>1</td><td style="text-align:right" class="mono">$59.95</td><td>UPS Ground</td><td><span class="badge badge-info">Shipped</span></td></tr>
+            <tr><td class="mono">#LH-4515</td><td>Feb 24, 2026</td><td>Alice Park</td><td class="mono" style="font-size:0.75rem">a.park@gmail.com</td><td><span class="badge badge-lt">Leuchtturm1917</span></td><td>4</td><td style="text-align:right" class="mono">$129.80</td><td>FedEx</td><td><span class="badge badge-success">Delivered</span></td></tr>
+            <tr><td class="mono">#LH-4514</td><td>Feb 24, 2026</td><td>Frank Bauer</td><td class="mono" style="font-size:0.75rem">f.bauer@posteo.de</td><td><span class="badge badge-lp">Lighthouse</span></td><td>2</td><td style="text-align:right" class="mono">$159.98</td><td>USPS Priority</td><td><span class="badge badge-success">Delivered</span></td></tr>
+            <tr><td class="mono">#LH-4513</td><td>Feb 23, 2026</td><td>Susan Harper</td><td class="mono" style="font-size:0.75rem">s.harper@aol.com</td><td><span class="badge badge-lt">Leuchtturm1917</span></td><td>1</td><td style="text-align:right" class="mono">$24.95</td><td>USPS Flat Rate</td><td><span class="badge badge-success">Delivered</span></td></tr>
+            <tr><td class="mono">#LH-4512</td><td>Feb 23, 2026</td><td>Markus Weiss</td><td class="mono" style="font-size:0.75rem">m.weiss@gmail.com</td><td><span class="badge badge-lp">Lighthouse</span></td><td>1</td><td style="text-align:right" class="mono">$129.99</td><td>FedEx</td><td><span class="badge badge-danger">Return Requested</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!--              PRODUCTS                   -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="page" id="page-products">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div class="filters">
+          <span class="filter-chip active" data-filter="all">All Products</span>
+          <span class="filter-chip" data-filter="lt">Leuchtturm1917</span>
+          <span class="filter-chip" data-filter="lp">Lighthouse / KABE</span>
+          <span class="filter-chip" data-filter="special">Special Editions</span>
+        </div>
+        <button class="btn btn-primary">+ Add Product</button>
+      </div>
+
+      <div class="product-grid" id="product-grid">
+        <!-- Leuchtturm1917 -->
+        <div class="product-card" data-brand="lt">
+          <div class="product-img lt-bg">📓</div>
+          <div class="product-info">
+            <div class="product-name">Medium A5 Notebook — Sunflower</div>
+            <div class="product-sku">LT-NB-A5-SUN</div>
+            <div style="margin-bottom:6px"><span class="badge badge-lt">Leuchtturm1917</span> <span class="badge badge-neutral">Grow Your Mind</span></div>
+            <div class="product-meta">
+              <span class="product-price">$29.95</span>
+              <span class="product-stock" style="color:var(--danger)">3 left</span>
+            </div>
+          </div>
+        </div>
+        <div class="product-card" data-brand="lt">
+          <div class="product-img lt-bg">📓</div>
+          <div class="product-info">
+            <div class="product-name">Medium A5 Notebook — Indigo</div>
+            <div class="product-sku">LT-NB-A5-IND</div>
+            <div style="margin-bottom:6px"><span class="badge badge-lt">Leuchtturm1917</span> <span class="badge badge-neutral">Grow Your Mind</span></div>
+            <div class="product-meta">
+              <span class="product-price">$29.95</span>
+              <span class="product-stock" style="color:var(--success)">142 in stock</span>
+            </div>
+          </div>
+        </div>
+        <div class="product-card" data-brand="lt special">
+          <div class="product-img lt-bg">🎁</div>
+          <div class="product-info">
+            <div class="product-name">Year of the Horse A5 Gift Set</div>
+            <div class="product-sku">LT-SE-YOH-A5</div>
+            <div style="margin-bottom:6px"><span class="badge badge-lt">Leuchtturm1917</span> <span class="badge badge-warning">Limited</span></div>
+            <div class="product-meta">
+              <span class="product-price">$59.95</span>
+              <span class="product-stock" style="color:var(--warning)">28 left</span>
+            </div>
+          </div>
+        </div>
+        <div class="product-card" data-brand="lt">
+          <div class="product-img lt-bg">🖊</div>
+          <div class="product-info">
+            <div class="product-name">Drehgriffel Nr. 1 — Black</div>
+            <div class="product-sku">LT-WI-DG1-BLK</div>
+            <div style="margin-bottom:6px"><span class="badge badge-lt">Leuchtturm1917</span></div>
+            <div class="product-meta">
+              <span class="product-price">$34.95</span>
+              <span class="product-stock" style="color:var(--danger)">7 left</span>
+            </div>
+          </div>
+        </div>
+        <div class="product-card" data-brand="lt special">
+          <div class="product-img lt-bg">✨</div>
+          <div class="product-info">
+            <div class="product-name">Luminous Notebook A5 (Bethge)</div>
+            <div class="product-sku">LT-SE-LUM-A5</div>
+            <div style="margin-bottom:6px"><span class="badge badge-lt">Leuchtturm1917</span> <span class="badge badge-neutral">Bethge / Pop Art</span></div>
+            <div class="product-meta">
+              <span class="product-price">$39.95</span>
+              <span class="product-stock" style="color:var(--success)">67 in stock</span>
+            </div>
+          </div>
+        </div>
+        <div class="product-card" data-brand="lt special">
+          <div class="product-img lt-bg">🏙</div>
+          <div class="product-info">
+            <div class="product-name">Monocle A5 Notebook</div>
+            <div class="product-sku">LT-SE-MON-A5</div>
+            <div style="margin-bottom:6px"><span class="badge badge-lt">Leuchtturm1917</span> <span class="badge badge-neutral">Monocle</span></div>
+            <div class="product-meta">
+              <span class="product-price">$44.95</span>
+              <span class="product-stock" style="color:var(--success)">53 in stock</span>
+            </div>
+          </div>
+        </div>
+        <!-- Lighthouse / KABE -->
+        <div class="product-card" data-brand="lp">
+          <div class="product-img lp-bg">🪙</div>
+          <div class="product-info">
+            <div class="product-name">QUADRUM Snaplock 10-Pack (41mm)</div>
+            <div class="product-sku">LP-CS-QDR-41</div>
+            <div style="margin-bottom:6px"><span class="badge badge-lp">Lighthouse</span></div>
+            <div class="product-meta">
+              <span class="product-price">$24.99</span>
+              <span class="product-stock" style="color:var(--warning)">11 left</span>
+            </div>
+          </div>
+        </div>
+        <div class="product-card" data-brand="lp">
+          <div class="product-img lp-bg">🔲</div>
+          <div class="product-info">
+            <div class="product-name">QUICKSLAB 5-Pack</div>
+            <div class="product-sku">LP-CS-QSL-5PK</div>
+            <div style="margin-bottom:6px"><span class="badge badge-lp">Lighthouse</span></div>
+            <div class="product-meta">
+              <span class="product-price">$34.99</span>
+              <span class="product-stock" style="color:var(--success)">89 in stock</span>
+            </div>
+          </div>
+        </div>
+        <div class="product-card" data-brand="lp">
+          <div class="product-img lp-bg">📦</div>
+          <div class="product-info">
+            <div class="product-name">INTERCEPT® Storage Box (Large)</div>
+            <div class="product-sku">LP-CS-INT-LRG</div>
+            <div style="margin-bottom:6px"><span class="badge badge-lp">Lighthouse</span> <span class="badge badge-neutral">INTERCEPT®</span></div>
+            <div class="product-meta">
+              <span class="product-price">$49.99</span>
+              <span class="product-stock" style="color:var(--success)">34 in stock</span>
+            </div>
+          </div>
+        </div>
+        <div class="product-card" data-brand="lp">
+          <div class="product-img lp-bg">🪵</div>
+          <div class="product-info">
+            <div class="product-name">VOLTERRA Presentation Case</div>
+            <div class="product-sku">LP-PR-VLT-WD</div>
+            <div style="margin-bottom:6px"><span class="badge badge-lp">Lighthouse</span> <span class="badge badge-neutral">Wood</span></div>
+            <div class="product-meta">
+              <span class="product-price">$89.99</span>
+              <span class="product-stock" style="color:var(--success)">22 in stock</span>
+            </div>
+          </div>
+        </div>
+        <div class="product-card" data-brand="lp">
+          <div class="product-img lp-bg">📘</div>
+          <div class="product-info">
+            <div class="product-name">KABE Supplement 2024 — Germany</div>
+            <div class="product-sku">LP-KS-2024-DE</div>
+            <div style="margin-bottom:6px"><span class="badge badge-lp">KABE</span> <span class="badge badge-neutral">2024</span></div>
+            <div class="product-meta">
+              <span class="product-price">$79.99</span>
+              <span class="product-stock" style="color:var(--warning)">15 left</span>
+            </div>
+          </div>
+        </div>
+        <div class="product-card" data-brand="lp">
+          <div class="product-img lp-bg">🔬</div>
+          <div class="product-info">
+            <div class="product-name">HOLMES UV Lamp</div>
+            <div class="product-sku">LP-OPT-HLM-UV</div>
+            <div style="margin-bottom:6px"><span class="badge badge-lp">Lighthouse</span> <span class="badge badge-neutral">Optical</span></div>
+            <div class="product-meta">
+              <span class="product-price">$129.99</span>
+              <span class="product-stock" style="color:var(--success)">19 in stock</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!--              INVENTORY                  -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="page" id="page-inventory">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div class="filters">
+          <span class="filter-chip active">All Items</span>
+          <span class="filter-chip">Critical</span>
+          <span class="filter-chip">Low Stock</span>
+          <span class="filter-chip">Healthy</span>
+        </div>
+        <button class="btn">Export CSV</button>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr><th>Product</th><th>SKU</th><th>Brand</th><th style="text-align:right">On Hand</th><th style="text-align:right">Reorder Point</th><th>Stock Level</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Medium A5 — Sunflower</td><td class="mono">LT-NB-A5-SUN</td><td><span class="badge badge-lt">LT1917</span></td>
+              <td style="text-align:right" class="mono">3</td><td style="text-align:right" class="mono">50</td>
+              <td><div class="progress-bar"><div class="progress-fill" style="width:6%;background:var(--danger)"></div></div></td>
+              <td><span class="badge badge-danger">Critical</span></td>
+            </tr>
+            <tr>
+              <td>Drehgriffel Nr. 1 — Black</td><td class="mono">LT-WI-DG1-BLK</td><td><span class="badge badge-lt">LT1917</span></td>
+              <td style="text-align:right" class="mono">7</td><td style="text-align:right" class="mono">40</td>
+              <td><div class="progress-bar"><div class="progress-fill" style="width:18%;background:var(--danger)"></div></div></td>
+              <td><span class="badge badge-danger">Critical</span></td>
+            </tr>
+            <tr>
+              <td>Bullet Journal — Turquoise25</td><td class="mono">LT-JN-BJ-T25</td><td><span class="badge badge-lt">LT1917</span></td>
+              <td style="text-align:right" class="mono">9</td><td style="text-align:right" class="mono">30</td>
+              <td><div class="progress-bar"><div class="progress-fill" style="width:30%;background:var(--danger)"></div></div></td>
+              <td><span class="badge badge-danger">Critical</span></td>
+            </tr>
+            <tr>
+              <td>QUADRUM Snaplock 41mm</td><td class="mono">LP-CS-QDR-41</td><td><span class="badge badge-lp">Lighthouse</span></td>
+              <td style="text-align:right" class="mono">11</td><td style="text-align:right" class="mono">25</td>
+              <td><div class="progress-bar"><div class="progress-fill" style="width:44%;background:var(--warning)"></div></div></td>
+              <td><span class="badge badge-warning">Low</span></td>
+            </tr>
+            <tr>
+              <td>KABE Supplement 2024 — DE</td><td class="mono">LP-KS-2024-DE</td><td><span class="badge badge-lp">KABE</span></td>
+              <td style="text-align:right" class="mono">15</td><td style="text-align:right" class="mono">30</td>
+              <td><div class="progress-bar"><div class="progress-fill" style="width:50%;background:var(--warning)"></div></div></td>
+              <td><span class="badge badge-warning">Low</span></td>
+            </tr>
+            <tr>
+              <td>Drehgriffel Nr. 2 — White</td><td class="mono">LT-WI-DG2-WHT</td><td><span class="badge badge-lt">LT1917</span></td>
+              <td style="text-align:right" class="mono">18</td><td style="text-align:right" class="mono">30</td>
+              <td><div class="progress-bar"><div class="progress-fill" style="width:60%;background:var(--warning)"></div></div></td>
+              <td><span class="badge badge-warning">Low</span></td>
+            </tr>
+            <tr>
+              <td>Medium A5 — Indigo</td><td class="mono">LT-NB-A5-IND</td><td><span class="badge badge-lt">LT1917</span></td>
+              <td style="text-align:right" class="mono">142</td><td style="text-align:right" class="mono">50</td>
+              <td><div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--success)"></div></div></td>
+              <td><span class="badge badge-success">Healthy</span></td>
+            </tr>
+            <tr>
+              <td>QUICKSLAB 5-Pack</td><td class="mono">LP-CS-QSL-5PK</td><td><span class="badge badge-lp">Lighthouse</span></td>
+              <td style="text-align:right" class="mono">89</td><td style="text-align:right" class="mono">25</td>
+              <td><div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--success)"></div></div></td>
+              <td><span class="badge badge-success">Healthy</span></td>
+            </tr>
+            <tr>
+              <td>VOLTERRA Case (Wood)</td><td class="mono">LP-PR-VLT-WD</td><td><span class="badge badge-lp">Lighthouse</span></td>
+              <td style="text-align:right" class="mono">22</td><td style="text-align:right" class="mono">10</td>
+              <td><div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--success)"></div></div></td>
+              <td><span class="badge badge-success">Healthy</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!--            SUBSCRIPTIONS                -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="page" id="page-subscriptions">
+      <!-- Stats -->
+      <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
+        <div class="card"><div class="sub-stat">
+          <div class="sub-stat-value">847</div>
+          <div class="sub-stat-label">Active Subscriptions</div>
+        </div></div>
+        <div class="card"><div class="sub-stat">
+          <div class="sub-stat-value" style="color:var(--accent-lp)">512</div>
+          <div class="sub-stat-label">KABE Subscribers</div>
+        </div></div>
+        <div class="card"><div class="sub-stat">
+          <div class="sub-stat-value" style="color:var(--accent-lt)">335</div>
+          <div class="sub-stat-label">Lighthouse Subscribers</div>
+        </div></div>
+        <div class="card"><div class="sub-stat">
+          <div class="sub-stat-value" style="color:var(--warning)">38</div>
+          <div class="sub-stat-label">Renewals Due (Mar)</div>
+        </div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Supplement Subscriptions</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm">Export</button>
+            <button class="btn btn-sm btn-primary">+ New Subscription</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Subscriber</th><th>Email</th><th>Plan</th><th>Countries</th><th>Since</th><th>Next Renewal</th><th>Annual Value</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Gerald Hoffman</td><td class="mono" style="font-size:0.75rem">g.hoffman@gmail.com</td><td><span class="badge badge-lp">KABE</span></td><td>Germany</td><td>2019</td><td class="mono">Mar 1, 2026</td><td class="mono">$79.99</td><td><span class="badge badge-warning">Renewal Due</span></td></tr>
+            <tr><td>Patricia Ruiz</td><td class="mono" style="font-size:0.75rem">p.ruiz@yahoo.com</td><td><span class="badge badge-lp">Lighthouse</span></td><td>USA</td><td>2021</td><td class="mono">Mar 1, 2026</td><td class="mono">$69.99</td><td><span class="badge badge-warning">Renewal Due</span></td></tr>
+            <tr><td>David Whitmore</td><td class="mono" style="font-size:0.75rem">d.whitmore@icloud.com</td><td><span class="badge badge-lp">KABE</span></td><td>Switzerland</td><td>2020</td><td class="mono">Mar 3, 2026</td><td class="mono">$79.99</td><td><span class="badge badge-success">Active</span></td></tr>
+            <tr><td>Sylvia Braun</td><td class="mono" style="font-size:0.75rem">s.braun@web.de</td><td><span class="badge badge-lp">KABE + LH</span></td><td>Germany, USA</td><td>2018</td><td class="mono">Mar 5, 2026</td><td class="mono">$149.98</td><td><span class="badge badge-success">Active</span></td></tr>
+            <tr><td>Michael Torres</td><td class="mono" style="font-size:0.75rem">m.torres@gmail.com</td><td><span class="badge badge-lp">Lighthouse</span></td><td>USA</td><td>2022</td><td class="mono">Apr 12, 2026</td><td class="mono">$69.99</td><td><span class="badge badge-success">Active</span></td></tr>
+            <tr><td>Ingrid Muller</td><td class="mono" style="font-size:0.75rem">i.muller@gmx.de</td><td><span class="badge badge-lp">KABE</span></td><td>Germany, Austria</td><td>2017</td><td class="mono">Apr 15, 2026</td><td class="mono">$159.98</td><td><span class="badge badge-success">Active</span></td></tr>
+            <tr><td>William Scott</td><td class="mono" style="font-size:0.75rem">w.scott@outlook.com</td><td><span class="badge badge-lp">Lighthouse</span></td><td>USA, Canada</td><td>2023</td><td class="mono">May 1, 2026</td><td class="mono">$139.98</td><td><span class="badge badge-success">Active</span></td></tr>
+            <tr><td>Hans Dietrich</td><td class="mono" style="font-size:0.75rem">h.dietrich@posteo.de</td><td><span class="badge badge-lp">KABE</span></td><td>Germany</td><td>2024</td><td class="mono">—</td><td class="mono">$79.99</td><td><span class="badge badge-danger">Payment Failed</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!--              SHIPPING                   -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="page" id="page-shipping">
+      <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
+        <div class="card"><div class="sub-stat">
+          <div class="sub-stat-value" style="color:var(--warning)">18</div>
+          <div class="sub-stat-label">Awaiting Fulfillment</div>
+        </div></div>
+        <div class="card"><div class="sub-stat">
+          <div class="sub-stat-value" style="color:var(--info)">12</div>
+          <div class="sub-stat-label">In Transit</div>
+        </div></div>
+        <div class="card"><div class="sub-stat">
+          <div class="sub-stat-value" style="color:var(--success)">891</div>
+          <div class="sub-stat-label">Delivered (MTD)</div>
+        </div></div>
+        <div class="card"><div class="sub-stat">
+          <div class="sub-stat-value">1.4d</div>
+          <div class="sub-stat-label">Avg Processing Time</div>
+        </div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Fulfillment Queue</span>
+          <button class="btn btn-sm btn-primary">Print Pick Lists</button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Order</th><th>Customer</th><th>Brand</th><th>Items</th><th>Carrier</th><th>Method</th><th>Free Ship?</th><th>Ordered</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">#LH-4521</td><td>Sarah Mitchell</td><td><span class="badge badge-lt">LT1917</span></td><td>3</td>
+              <td>FedEx</td><td>Ground</td><td><span class="badge badge-success">Yes ($89 &gt; $50)</span></td>
+              <td>Feb 26</td><td><span class="badge badge-warning">Pick &amp; Pack</span></td>
+              <td><button class="btn btn-sm">Ship</button></td>
+            </tr>
+            <tr>
+              <td class="mono">#LH-4519</td><td>Emma Schneider</td><td><span class="badge badge-neutral">Mixed</span></td><td>5</td>
+              <td>UPS</td><td>Ground</td><td><span class="badge badge-success">Yes ($164 &gt; $99)</span></td>
+              <td>Feb 25</td><td><span class="badge badge-warning">Pick &amp; Pack</span></td>
+              <td><button class="btn btn-sm">Ship</button></td>
+            </tr>
+            <tr>
+              <td class="mono">#LH-4523</td><td>Rachel Adams</td><td><span class="badge badge-lp">Lighthouse</span></td><td>1</td>
+              <td>USPS</td><td>Priority</td><td><span class="badge badge-neutral">No ($49 &lt; $99)</span></td>
+              <td>Feb 26</td><td><span class="badge badge-info">Awaiting Pick</span></td>
+              <td><button class="btn btn-sm">Ship</button></td>
+            </tr>
+            <tr>
+              <td class="mono">#LH-4522</td><td>Paul Fischer</td><td><span class="badge badge-lt">LT1917</span></td><td>1</td>
+              <td>USPS</td><td>Flat Rate</td><td><span class="badge badge-neutral">No ($29 &lt; $50)</span></td>
+              <td>Feb 26</td><td><span class="badge badge-info">Awaiting Pick</span></td>
+              <td><button class="btn btn-sm">Ship</button></td>
+            </tr>
+            <tr>
+              <td class="mono">#LH-4520</td><td>Robert Chen</td><td><span class="badge badge-lp">Lighthouse</span></td><td>1</td>
+              <td>USPS</td><td>Priority</td><td><span class="badge badge-neutral">No ($79 &lt; $99)</span></td>
+              <td>Feb 26</td><td><span class="badge badge-success">Shipped ✓</span></td>
+              <td class="mono" style="font-size:0.72rem;color:var(--text-secondary)">9400111...</td>
+            </tr>
+            <tr>
+              <td class="mono">#LH-4516</td><td>Thomas Klein</td><td><span class="badge badge-lt">LT1917</span></td><td>1</td>
+              <td>UPS</td><td>Ground</td><td><span class="badge badge-success">Yes ($59 &gt; $50)</span></td>
+              <td>Feb 24</td><td><span class="badge badge-success">Shipped ✓</span></td>
+              <td class="mono" style="font-size:0.72rem;color:var(--text-secondary)">1Z999AA...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- .content -->
+</div><!-- .main -->
+
+<script>
+// ─── Page navigation ──────────────────────────
+const pageTitles = {
+  dashboard: ['Dashboard', 'Overview — February 2026'],
+  orders: ['Orders', 'Commerce — All Orders'],
+  products: ['Products', 'Commerce — Product Catalog'],
+  inventory: ['Inventory', 'Commerce — Stock Levels'],
+  subscriptions: ['Subscriptions', 'Operations — Stamp Supplement Subscriptions'],
+  shipping: ['Shipping', 'Operations — Fulfillment Queue'],
+};
+
+function switchPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[pageId][0];
+  document.getElementById('page-breadcrumb').textContent = pageTitles[pageId][1];
+}
+
+document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+  item.addEventListener('click', () => switchPage(item.dataset.page));
+});
+
+// ─── Filter chips (toggle active) ─────────────
+document.querySelectorAll('.filters').forEach(filterBar => {
+  filterBar.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      filterBar.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+});
+</script>
+
+</body>
+</html>

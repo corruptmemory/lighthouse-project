@@ -1,0 +1,5 @@
+# Playwright MCP artifacts
+.playwright-mcp/
+
+# Screenshots (regenerable from the HTML mockups)
+mockups/*.png
