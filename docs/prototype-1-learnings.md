@@ -109,6 +109,87 @@ system where the agent's system prompt contains the DDL — schema changes need 
 propagate to the agent's context, and historical widgets may reference
 columns/tables that no longer exist.
 
+## Real-World Comparison: Power BI at Brighthouse Financial
+
+During prototype-1 development, we examined Power BI dashboards used by
+Brighthouse Financial for HPC compute cost management. These dashboards track
+actuarial/financial model runs (Shield Market Model, World Market Modeling)
+across compute clusters, showing cost, core-hour utilization, and efficiency.
+
+This is a textbook example of every problem the vision doc identifies.
+
+### What the Power BI dashboard shows
+
+- **KPI cards**: Request Core Hours (5.91M), Hedge Core Hours (1.77M), Unused
+  (4.14M), Efficiency (29.9%)
+- **Total Cost**: $2.54M across 2K projects
+- **Visualizations**: Cost Trend by Cluster (line chart), Cost by Cluster
+  (donut chart)
+- **Data table**: Business Name, Owner, Project Name, Allocation, Cluster,
+  Total with Infra Cost, Request/Usage Core Hours, Efficiency
+- **Filters**: Business Process checkboxes, date range picker
+
+Filtering to a specific business process changes efficiency from 29.9% to 91.2%
+— some processes are massively over-provisioning compute.
+
+### How the five vision doc problems manifest here
+
+**1. The customization layer exists.** Someone — a Power BI developer, a data
+engineer, a consulting team — built this dashboard. That required understanding
+the data model, writing DAX queries (Power BI's proprietary query language),
+designing the layout, setting up the data pipeline, and maintaining it as
+requirements change. This is the entire "customization layer" the vision doc
+says AI can replace.
+
+**2. The super-user bottleneck is visible.** If someone on a call says "Can we
+also see cost per core-hour broken out by model variant?" — nobody can answer
+that live. Someone files a request, a Power BI person modifies the DAX, updates
+the dashboard, and maybe next week you see the answer. With the prototype-1
+approach, you type the question and get the answer during the meeting.
+
+**3. The fixed widget vocabulary.** This dashboard has exactly 4 KPI cards,
+1 line chart, 1 donut chart, 1 data table. Those were chosen at design time.
+What if the right visualization is a Sankey diagram of cost flow between
+clusters? A heatmap of efficiency by week and model? A waterfall chart showing
+where the 70% waste is coming from? Power BI can do those, but someone has to
+build them. The AI generates whatever fits the question.
+
+**4. The trust problem is real.** Look at those numbers: $2.5M total cost,
+29.9% efficiency. People make real decisions based on these. If an AI generated
+that 29.9%, would they trust it? This is exactly hard problem #1 from the
+vision doc. The "show the SQL" approach is the right first step — a finance
+person can audit `SELECT SUM(request - usage) / SUM(request) FROM ...` and
+verify the math.
+
+**5. Proactive insight is the unlock.** 29.9% efficiency across all projects vs
+91.2% filtered down — that gap tells a story. An AI agent could surface this
+proactively: "I notice your Shield Market Model (GMMA) projects are running at
+15% efficiency — they're requesting 4x the core hours they use. Want me to show
+you the worst offenders?" No fixed dashboard does this.
+
+### The gap between prototype-1 and replacing this dashboard
+
+The core loop already works (ask question → SQL → visualization). What's
+missing:
+
+1. **Real database connection** — PostgreSQL or a data warehouse instead of
+   SQLite seed data
+2. **Trust/verification layer** — SQL display, edit-and-rerun, audit trail
+3. **Widget persistence** — the markdown document approach, so dashboards
+   survive across sessions
+4. **Schema awareness** — the agent needs the DDL in its system prompt, which
+   means schema changes must propagate (the migration problem)
+
+### The strategic observation
+
+Power BI is a ~$10B/year Microsoft business built on the premise that business
+users need a specialized tool + specialized people to answer questions about
+their own data. The AI-driven ERP thesis says that premise is becoming false.
+Prototype-1 — an agent that takes natural language, writes SQL, and generates
+visualizations — is a direct challenge to that premise. The Brighthouse
+dashboard is what "the old way" looks like: rigid, requires specialists to
+modify, and can only answer questions it was pre-designed to answer.
+
 ## Technical Debt
 
 - Session and widget storage is in-memory — lost on restart
