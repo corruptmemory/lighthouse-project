@@ -161,14 +161,32 @@ detection in `create_widget`.
 Conversation history dies on restart. Widget persistence was the priority;
 session persistence is deferred.
 
-### Agent doesn't always create widgets proactively
+### Widget creation should be user-driven, not AI-driven
 
-Some queries that would benefit from a visualization only get a text
-response. For example, "Which products are we at risk of running out of?"
-returned a text answer with a data table but no widget, even though a
-low-stock alert visualization would be valuable. The system prompt says
-"proactively offer visualizations" but the model doesn't always comply.
-This may need stronger prompting or examples.
+The system prompt says "proactively offer visualizations" but the agent
+is unpredictable about it. For example, "Which products are we at risk of
+running out of?" got a thorough text answer with inline SQL + data table
+but no widget — even though a low-stock visualization would be useful.
+
+**The better model**: Don't try to make the AI guess. The agent's job is to
+answer the question well (text + inline SQL + data). The *user* decides
+whether to promote that answer to a persistent widget. Two paths:
+
+1. **Explicit intent**: "Create a widget that shows low-stock products" —
+   predictable, always produces a widget.
+2. **Post-hoc promotion**: After seeing an answer, a "Make a widget from
+   this" button captures the context (question + working SQL + data shape)
+   and feeds it back to the agent to produce a `.widget.md`.
+
+Benefits:
+- Predictable behavior — users learn the vocabulary ("create a widget...")
+- No unwanted widget clutter from overeager AI
+- De-duplication solved naturally (user-initiated = intentional)
+- The text+SQL answer is often exactly what's needed; no widget required
+
+The system prompt should shift from "proactively offer visualizations" to
+"always answer thoroughly with data; create widgets only when explicitly
+asked."
 
 ## Technical Debt
 
