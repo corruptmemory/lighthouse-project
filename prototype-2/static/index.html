@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lighthouse ERP — AI Assistant</title>
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">🏠</span>
+                    <span class="logo-text">Lighthouse</span>
+                </div>
+                <div class="logo-subtitle">AI-Driven ERP</div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-label">Assistant</div>
+                    <a class="nav-item active" href="#">
+                        <span class="nav-icon">💬</span>
+                        Chat
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-label">Data</div>
+                    <a class="nav-item" href="#" onclick="askAbout('Give me an overview of our product catalog')">
+                        <span class="nav-icon">📦</span>
+                        Products
+                    </a>
+                    <a class="nav-item" href="#" onclick="askAbout('Show me recent orders')">
+                        <span class="nav-icon">🛒</span>
+                        Orders
+                    </a>
+                    <a class="nav-item" href="#" onclick="askAbout('Show me inventory levels with stock alerts')">
+                        <span class="nav-icon">📊</span>
+                        Inventory
+                    </a>
+                    <a class="nav-item" href="#" onclick="askAbout('Show me subscription status overview')">
+                        <span class="nav-icon">🔄</span>
+                        Subscriptions
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-label">Views</div>
+                    <a class="nav-item" href="#" onclick="askAbout('Create a dashboard with key business metrics')">
+                        <span class="nav-icon">📋</span>
+                        Dashboards
+                    </a>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-avatar">AI</div>
+                <div>
+                    <div class="sidebar-user">AI Assistant</div>
+                    <div class="sidebar-role">Prototype 2</div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="chat-panel">
+                <div class="chat-header">
+                    <h1>AI Assistant</h1>
+                    <p>Ask questions about your business data. I can query the database and create persistent visualizations.</p>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message assistant">
+                        <div class="message-content">
+                            <p>Hello! I'm your AI business assistant. I have access to your product catalog, orders, inventory, and subscription data.</p>
+                            <p>Try asking me something like:</p>
+                            <ul>
+                                <li>"What products do we have?"</li>
+                                <li>"Show me a chart of stock levels by brand"</li>
+                                <li>"Which orders shipped last week?"</li>
+                                <li>"Create a dashboard with revenue and order status"</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <form id="chatForm" onsubmit="sendMessage(event)">
+                        <div class="input-row">
+                            <input type="text" id="chatInput" placeholder="Ask about your business data..." autocomplete="off">
+                            <button type="submit" id="sendBtn">Send</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="widget-panel" id="widgetPanel">
+                <div class="widget-header">
+                    <h2>Saved Widgets</h2>
+                    <button class="clear-widgets" onclick="clearWidgets()">Clear All</button>
+                </div>
+                <div class="widget-area" id="widgetArea">
+                    <div class="widget-placeholder">
+                        <p>Widgets will appear here when the AI creates visualizations.</p>
+                        <p class="hint">Try: "Show me a chart of stock levels by brand"</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
