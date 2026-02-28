@@ -29,6 +29,7 @@ Last updated: 2026-02-28
 - `docs/research-erp-landscape.md` — SAP/NetSuite/Odoo/Shopify comparisons
 - `docs/research-go-integrations.md` — Go SDK maturity for Stripe, Shopify, SAP
 - `docs/domain-expert-questions.md` — awaiting business stakeholder answers
+- `docs/schema-evolution-design.md` — blue-green DB migration, schema-as-code (in progress)
 - `prototype-2-idea.md` — SQL visualizer for trust, dashboard vs widget creation UX
 
 ## Prototype-2 Architecture
@@ -52,6 +53,18 @@ Last updated: 2026-02-28
 - SQL transparency is the cheapest trust mitigation — show queries inline,
   let users inspect. The full SQL visualizer (hover to see intermediate
   results) is the deeper trust unlock, not yet built.
+
+## Schema Evolution (in-progress design)
+
+See `docs/schema-evolution-design.md` for the full discussion. Key ideas:
+- Schema as a Go data structure (declarative constant), not migration files
+- Blue-green DB migration: build new DB, swap, old DB stays untouched
+- CSV as interchange format, load without constraints, overlay after
+- Diff logic derived from comparing schema versions, not hand-written
+- AI agent context derived from schema data structure — no drift
+- Database-specific, not generic. Postgres all-in. No hedging.
+- Jim has answers to open questions (lineage, swap mechanics, procs/triggers)
+  — to be worked through in a follow-up session.
 
 ## Architecture Decisions
 
