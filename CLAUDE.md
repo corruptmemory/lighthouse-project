@@ -55,6 +55,13 @@ These are non-negotiable. See `docs/architecture-principles.md` for rationale.
 - Trademark fidelity: QUADRUM, QUICKSLAB, VOLTERRA, Drehgriffel, INTERCEPT®
   must maintain exact casing and spelling in all code, comments, and output.
 
+## AI Memory
+
+Read `.claude/shared-memory.md` at session start for accumulated project
+knowledge (status, architecture decisions, design insights). That file is
+shared across machines via git. Machine-local notes live in the auto-memory
+directory (`~/.claude/projects/.../memory/`).
+
 ## Project Status
 
 - [x] Technical specification (cleaned up, Go-oriented)
