@@ -11,13 +11,14 @@ Last updated: 2026-02-28
 - Early design phase — no production application code yet
 - Prototype-1: AI agent + SQLite + SSE chat (2 tools: execute_sql, render_html)
 - Prototype-2: persistent widgets as `.widget.md`, dashboards, data injection
+- Prototype-3: two-page app — CRUD order management + AI dashboard with widgets
 - Domain expert questions drafted but unanswered
 - Implementation plan not yet created
 
 ## Branches
 
 - `master` — base docs + prototype-1
-- `jim/experiments` — adds prototype-2, updated learnings, prototype-2-idea.md
+- `jim/experiments` — adds prototype-2, prototype-3, updated learnings
 
 ## Key Docs
 
@@ -26,6 +27,7 @@ Last updated: 2026-02-28
 - `docs/vision-ai-driven-erp.md` — AI replaces ERP query/report/dashboard layer
 - `docs/prototype-1-learnings.md` — core loop, Power BI case study, embedded Postgres idea
 - `docs/prototype-2-learnings.md` — markdown-as-artifact, data injection, widget creation UX
+- `docs/prototype-3-learnings.md` — two-page architecture, product autocomplete, IIFE fix
 - `docs/research-erp-landscape.md` — SAP/NetSuite/Odoo/Shopify comparisons
 - `docs/research-go-integrations.md` — Go SDK maturity for Stripe, Shopify, SAP
 - `docs/domain-expert-questions.md` — awaiting business stakeholder answers
@@ -43,6 +45,17 @@ Last updated: 2026-02-28
 - Two SQL execution paths: pipe-delimited (for agent) vs structured (for SSE/widgets)
 - `db.SetMaxOpenConns(1)` required for `:memory:` SQLite (pool creates separate DBs per connection)
 
+## Prototype-3 Architecture
+
+- Two pages, one binary: Orders (CRUD) at `/` and Dashboard (AI chat) at `/dashboard`
+- Shared sidebar with active nav state, shared `*sql.DB`
+- Orders page: htmx master-detail, filter/sort/CRUD, product autocomplete
+- Dashboard page: SSE streaming chat, SQL tool use, widget creation
+- Product autocomplete: vanilla JS, `/api/products?search=`, debounced, arrow keys
+- IIFE wrapping: `wrapScriptsInIIFE` in widgets.go fixes AI-generated top-level `return`
+- Widget persistence: `.widget.md` on disk, auto-loaded on dashboard page load
+- Ported from p2: session.go, tools.go, widgets.go, dashboards.go, agent.go
+
 ## Design Insights (confirmed across sessions)
 
 - Widget creation should be user-driven, not AI-initiated. The agent answers
@@ -54,6 +67,10 @@ Last updated: 2026-02-28
 - SQL transparency is the cheapest trust mitigation — show queries inline,
   let users inspect. The full SQL visualizer (hover to see intermediate
   results) is the deeper trust unlock, not yet built.
+- Two-page architecture beats cramming everything into one page. Each page
+  gets full width for its job. Shared database means zero sync overhead.
+- AI-generated JS needs guardrails. Wrapping `<script>` in IIFE is a
+  server-side defense against common LLM code generation antipatterns.
 
 ## Schema Evolution (moved to separate repo)
 

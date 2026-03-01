@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lighthouse ERP — Orders</title>
+    <link rel="stylesheet" href="/app.css">
+    <script src="/vendor/htmx.min.js"></script>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">🏠</span>
+                    <span class="logo-text">Lighthouse</span>
+                </div>
+                <div class="logo-subtitle">Order Management</div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-label">Management</div>
+                    <a class="nav-item{{ if eq .Page "orders" }} active{{ end }}" href="/">
+                        <span class="nav-icon">🛒</span>
+                        Orders
+                    </a>
+                    <a class="nav-item{{ if eq .Page "dashboard" }} active{{ end }}" href="/dashboard">
+                        <span class="nav-icon">🤖</span>
+                        Dashboard
+                    </a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-label">Data</div>
+                    <a class="nav-item" href="#">
+                        <span class="nav-icon">📦</span>
+                        Products
+                    </a>
+                    <a class="nav-item" href="#">
+                        <span class="nav-icon">📊</span>
+                        Inventory
+                    </a>
+                    <a class="nav-item" href="#">
+                        <span class="nav-icon">🔄</span>
+                        Subscriptions
+                    </a>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-avatar">P3</div>
+                <div>
+                    <div class="sidebar-user">Order Manager</div>
+                    <div class="sidebar-role">Prototype 3</div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="master-detail">
+                <!-- Top pane: Order list -->
+                <div class="master-pane">
+                    <div class="filter-bar">
+                        <div class="filter-controls" id="filters"
+                             hx-get="/api/orders"
+                             hx-trigger="input changed delay:300ms from:find input, change from:find select"
+                             hx-target="#order-table-body"
+                             hx-include="#filters">
+                            <input type="search" name="search" placeholder="Search orders or customers..." class="filter-input filter-search">
+                            <select name="status" class="filter-input filter-select">
+                                <option value="">All Statuses</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Shipped">Shipped</option>
+                                <option value="Delivered">Delivered</option>
+                                <option value="Return Requested">Return Requested</option>
+                            </select>
+                            <select name="brand" class="filter-input filter-select">
+                                <option value="">All Brands</option>
+                                <option value="Leuchtturm1917">Leuchtturm1917</option>
+                                <option value="Lighthouse Publications">Lighthouse Publications</option>
+                                <option value="Mixed">Mixed</option>
+                            </select>
+                            <input type="date" name="from" class="filter-input filter-date" title="From date">
+                            <input type="date" name="to" class="filter-input filter-date" title="To date">
+                        </div>
+                        <button class="btn btn-primary"
+                                hx-get="/api/orders/new"
+                                hx-target="#detail-pane">
+                            + New Order
+                        </button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="order-table">
+                            <thead>
+                                <tr>
+                                    {{- $sort := .SortCol }}
+                                    {{- $dir := .SortDir }}
+                                    {{- range $col := .Columns }}
+                                    <th class="sortable"
+                                        hx-get="/api/orders?sort={{ $col.Key }}&dir={{ nextDir $col.Key $sort $dir }}"
+                                        hx-target="#order-table-body"
+                                        hx-include="#filters">
+                                        {{ $col.Label }} {{ sortIcon $col.Key $sort $dir }}
+                                    </th>
+                                    {{- end }}
+                                </tr>
+                            </thead>
+                            <tbody id="order-table-body"
+                                   hx-get="/api/orders"
+                                   hx-trigger="refreshTable from:body"
+                                   hx-include="#filters">
+                                {{ template "order-rows" .Orders }}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Bottom pane: Order detail -->
+                <div class="detail-pane" id="detail-pane">
+                    <div class="detail-placeholder">
+                        <p>Select an order to view details</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+    // Row selection highlighting
+    document.addEventListener('htmx:afterRequest', function(e) {
+        var row = e.detail.elt;
+        if (row.classList && row.classList.contains('order-row')) {
+            document.querySelectorAll('.order-row.selected').forEach(function(r) {
+                r.classList.remove('selected');
+            });
+            row.classList.add('selected');
+        }
+    });
+    </script>
+    <script src="/app.js"></script>
+</body>
+</html>

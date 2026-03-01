@@ -1,0 +1,26 @@
+{{ define "order-rows" }}
+{{- if not . }}
+<tr>
+    <td colspan="7" class="empty-state">No orders match your filters</td>
+</tr>
+{{- else }}
+{{- range . }}
+<tr class="order-row"
+    hx-get="/api/orders/{{ .OrderID }}"
+    hx-target="#detail-pane"
+    hx-swap="innerHTML"
+    data-order-id="{{ .OrderID }}">
+    <td class="col-order-num">{{ .OrderNumber }}</td>
+    <td>{{ .CustomerName }}</td>
+    <td><span class="brand-badge {{ brandClass .BrandMix }}">{{ .BrandMix }}</span></td>
+    <td class="col-num">{{ .ItemCount }}</td>
+    <td class="col-num">{{ formatMoney .Total }}</td>
+    <td><span class="status-badge {{ statusClass .Status }}">{{ .Status }}</span></td>
+    <td>{{ formatDate .OrderDate }}</td>
+</tr>
+{{- end }}
+{{- end }}
+{{ end }}
+{{ define "order-table-partial" }}
+{{ template "order-rows" .Orders }}
+{{ end }}

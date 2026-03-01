@@ -55,6 +55,12 @@ These are non-negotiable. See `docs/architecture-principles.md` for rationale.
 - Trademark fidelity: QUADRUM, QUICKSLAB, VOLTERRA, Drehgriffel, INTERCEPT®
   must maintain exact casing and spelling in all code, comments, and output.
 
+## Playwright Testing
+
+When running a web browser interactively via Playwright, always close tabs that
+you are not directly controlling so the user can clearly see your interaction
+with the application.
+
 ## AI Memory
 
 Read `.claude/shared-memory.md` at session start for accumulated project

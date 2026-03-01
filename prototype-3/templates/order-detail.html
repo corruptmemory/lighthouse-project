@@ -1,0 +1,88 @@
+{{ define "order-detail" }}
+<div class="detail-content">
+    <div class="detail-header">
+        <div class="detail-title">
+            <h2>Order {{ .Order.OrderNumber }}</h2>
+            <span class="status-badge {{ statusClass .Order.Status }}">{{ .Order.Status }}</span>
+        </div>
+        <button class="btn btn-secondary"
+                hx-get="/api/orders/{{ .Order.OrderID }}/edit"
+                hx-target="#detail-pane">
+            Edit
+        </button>
+    </div>
+
+    <div class="detail-grid">
+        <div class="detail-section">
+            <h3>Customer</h3>
+            <div class="detail-field">
+                <span class="field-label">Name</span>
+                <span class="field-value">{{ .Order.CustomerName }}</span>
+            </div>
+            <div class="detail-field">
+                <span class="field-label">Email</span>
+                <span class="field-value">{{ .Order.CustomerEmail }}</span>
+            </div>
+        </div>
+        <div class="detail-section">
+            <h3>Shipping</h3>
+            <div class="detail-field">
+                <span class="field-label">Carrier</span>
+                <span class="field-value">{{ .Order.ShippingCarrier }}</span>
+            </div>
+            <div class="detail-field">
+                <span class="field-label">Method</span>
+                <span class="field-value">{{ .Order.ShippingMethod }}</span>
+            </div>
+        </div>
+        <div class="detail-section">
+            <h3>Details</h3>
+            <div class="detail-field">
+                <span class="field-label">Brand</span>
+                <span class="field-value"><span class="brand-badge {{ brandClass .Order.BrandMix }}">{{ .Order.BrandMix }}</span></span>
+            </div>
+            <div class="detail-field">
+                <span class="field-label">Date</span>
+                <span class="field-value">{{ formatDate .Order.OrderDate }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-section">
+        <h3>Line Items</h3>
+        {{ if .Items }}
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th class="col-num">Qty</th>
+                    <th class="col-num">Unit Price</th>
+                    <th class="col-num">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .Items }}
+                <tr>
+                    <td>{{ .ProductName }}</td>
+                    <td class="col-sku">{{ .SKU }}</td>
+                    <td class="col-num">{{ .Quantity }}</td>
+                    <td class="col-num">{{ formatMoney .UnitPrice }}</td>
+                    <td class="col-num">{{ formatMoney .LineTotal }}</td>
+                </tr>
+                {{ end }}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" class="total-label">Order Total</td>
+                    <td class="col-num total-value">{{ formatMoney .Order.Total }}</td>
+                </tr>
+            </tfoot>
+        </table>
+        {{ else }}
+        <p class="no-items">No line items recorded for this order.</p>
+        {{ end }}
+    </div>
+</div>
+{{ end }}
+{{ template "order-detail" . }}
