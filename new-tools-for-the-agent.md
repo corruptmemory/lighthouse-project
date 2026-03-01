@@ -54,3 +54,35 @@ It takes a set of key/value pairs (JSON is fine):
    - `brand` - a string, can be a single brand or an array in `[]` to be used as an IN query
    - `sku` - a string, can be a single sku, or an array of skus in `[]`
    - `name` - a string.  Can contain "wildcards" (globs or regular expressions)
+
+### Sorting
+
+- `sort` -- a string specifying column and direction, defaulting to
+  `order_date desc`. Multiple sort keys separated by commas.
+  - `sort=order_date desc` -- single sort
+  - `sort=status asc, total desc` -- multi-column sort
+  - Valid columns: any top-level return field (`order_number`, `customer_name`,
+    `brand_mix`, `total`, `item_count`, `status`, `order_date`, `created_at`).
+    The Go layer whitelists these to prevent injection.
+
+### Pagination
+
+- `limit` -- integer, maximum number of results to return. The Go layer
+  enforces a ceiling (e.g. 200) regardless of what the agent requests.
+- `offset` -- integer, number of results to skip before returning.
+
+**Caveat:** limit/offset pagination is unreliable in high-throughput live
+systems. When new orders arrive between page fetches, rows shift — the user
+sees duplicates or misses rows entirely, and it looks like "pagination is
+broken." This is fine for prototyping and low-volume use, but production
+systems with significant order flow will need cursor-based pagination
+(keyset pagination using `WHERE order_id > last_seen_id ORDER BY order_id`)
+or snapshot isolation. Noting this now so we don't get surprised later.
+
+## Order manipulation tools
+
+TODO — next design iteration. The goal is structured mutation tools
+(`update_order`, etc.) that replace raw DML in the bulk operations flow.
+The agent proposes structured changes, the human reviews readable
+descriptions instead of SQL strings, same propose-review-execute trust
+boundary.
