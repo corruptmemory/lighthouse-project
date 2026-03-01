@@ -32,6 +32,8 @@ Last updated: 2026-03-01
 - `docs/research-go-integrations.md` — Go SDK maturity for Stripe, Shopify, SAP
 - `docs/domain-expert-questions.md` — awaiting business stakeholder answers
 - `docs/schema-evolution-design.md` — blue-green DB migration, schema-as-code (in progress)
+- `new-tools-for-the-agent.md` — structured tool spec: order_search, sort, pagination
+- `docs/retrospective-session-2026-03-01.md` — spec-writing pattern for autonomous execution
 - `prototype-2-idea.md` — SQL visualizer for trust, dashboard vs widget creation UX
 
 ## Prototype-2 Architecture
@@ -108,9 +110,14 @@ structured-query-to-SQL compiler. Smaller error surface on both sides.
 - Same propose-review-execute trust boundary, safer WHERE clauses
 
 ### Design decisions made
-- GLOB for wildcards (familiar to users, maps to SQLite native)
+- GLOB for wildcards (familiar to users, maps to SQLite native, case-sensitive)
 - SQLite JSON functions confirmed viable (`json_group_array`, `json_object`,
   `->>` operator since 3.38+)
+- Sort: `sort` param, string with column + direction, multi-column via commas
+- Pagination: `limit` (server-enforced ceiling) + `offset`. Known caveat:
+  limit/offset breaks in high-throughput systems (row shifting between pages).
+  Production needs cursor-based / keyset pagination.
+- Mutation tools: next design iteration (user providing spec next session)
 
 ## Design Insights (confirmed across sessions)
 
