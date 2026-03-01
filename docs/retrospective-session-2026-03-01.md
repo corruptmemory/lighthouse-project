@@ -170,7 +170,17 @@ verify correct results returned.
 Looking across both phases, the spec pattern that enables autonomous
 execution is:
 
-1. **State the goal in one sentence.** What are we building and why.
+1. **State the design intent.** Not just *what* but *why* — the
+   overarching idea that connects all the tasks. Three sentences that
+   give a fresh reader (or a fresh session) the north star for resolving
+   ambiguous choices. Without this, tasks may be executed correctly in
+   isolation but fail to cohere. Example:
+
+   > The current agent writes raw SQL via execute_sql. This is slow,
+   > fragile, and opaque. order_search replaces the query half: agent
+   > fills structured params, Go compiles to SQL. The agent becomes a
+   > translator, Go becomes the compiler.
+
 2. **List the files** — modified or new — with function signatures.
 3. **Define data shapes** — structs, JSON schemas, API contracts.
 4. **Specify behavior at decision points.** Defaults, maximums, fallbacks,
@@ -185,3 +195,10 @@ The key insight: **the spec should contain no questions.** Every question
 is a round-trip. If writing the spec surfaces questions you can't answer,
 those are the things to discuss first — then update the spec and hand it
 off for execution.
+
+The second insight: **make the connecting thread explicit.** Task
+breakdowns have an implicit overarching idea — the *why* behind all the
+*whats*. If you don't state it, you're relying on the executor to infer
+it. They might get it right, or they might execute each task correctly
+but make choices that don't cohere. A short "Design Intent" section at
+the top costs almost nothing to write and eliminates this risk.
