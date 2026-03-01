@@ -33,6 +33,11 @@ type CreateDashboardInput struct {
 	WidgetSlugs []string `json:"widget_slugs"`
 }
 
+type ReturnOrderIDsInput struct {
+	OrderIDs    []int  `json:"order_ids"`
+	Explanation string `json:"explanation"`
+}
+
 // executeSQL returns pipe-delimited text results for the agent.
 func executeSQL(db *sql.DB, input ExecuteSQLInput) (string, bool) {
 	query := strings.TrimSpace(input.Query)

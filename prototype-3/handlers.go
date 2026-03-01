@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -600,6 +601,86 @@ func (h *Handlers) searchProducts(query string) ([]Product, error) {
 		products = append(products, p)
 	}
 	return products, rows.Err()
+}
+
+// --- AI Filter (synchronous, one-shot agent) ---
+
+type AIFilterRequest struct {
+	Prompt string `json:"prompt"`
+}
+
+func (h *Handlers) HandleAIFilter(w http.ResponseWriter, r *http.Request) {
+	var req AIFilterRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Prompt == "" {
+		http.Error(w, "prompt is required", http.StatusBadRequest)
+		return
+	}
+
+	result, err := runFilterAgentLoop(r.Context(), h.agentCfg, req.Prompt)
+	if err != nil {
+		log.Printf("AI filter error: %v", err)
+		http.Error(w, fmt.Sprintf("AI filter error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	orders, err := h.queryOrdersByIDs(result.OrderIDs)
+	if err != nil {
+		log.Printf("query orders by IDs: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Send explanation via HX-Trigger header
+	triggerData, _ := json.Marshal(map[string]string{
+		"aiExplanation": result.Explanation,
+	})
+	w.Header().Set("HX-Trigger", string(triggerData))
+
+	data := TableData{Orders: orders}
+	if err := h.tmpls.RenderOrderTable(w, data); err != nil {
+		log.Printf("render order table: %v", err)
+	}
+}
+
+func (h *Handlers) queryOrdersByIDs(ids []int) ([]Order, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	placeholders := make([]string, len(ids))
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+
+	query := fmt.Sprintf(`SELECT order_id, order_number, customer_name, customer_email, brand_mix,
+		total, item_count, shipping_carrier, shipping_method, status, order_date
+		FROM orders WHERE order_id IN (%s) ORDER BY order_date DESC`,
+		strings.Join(placeholders, ", "))
+
+	rows, err := h.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []Order
+	for rows.Next() {
+		var o Order
+		if err := rows.Scan(&o.OrderID, &o.OrderNumber, &o.CustomerName, &o.CustomerEmail,
+			&o.BrandMix, &o.Total, &o.ItemCount, &o.ShippingCarrier, &o.ShippingMethod,
+			&o.Status, &o.OrderDate); err != nil {
+			return nil, err
+		}
+		orders = append(orders, o)
+	}
+	return orders, rows.Err()
 }
 
 // --- Dashboard page (full page render) ---

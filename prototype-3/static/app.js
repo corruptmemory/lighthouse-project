@@ -665,6 +665,99 @@
 
 
 // ============================================================
+// AI Filter (Orders page)
+// ============================================================
+
+function toggleFilterMode(mode) {
+    var fields = document.getElementById('filters');
+    var ai = document.getElementById('ai-filters');
+    if (!fields || !ai) return;
+
+    if (mode === 'ai') {
+        fields.style.display = 'none';
+        ai.style.display = 'flex';
+        document.getElementById('ai-filter-input').focus();
+    } else {
+        fields.style.display = 'flex';
+        ai.style.display = 'none';
+        clearAIFilter();
+    }
+}
+
+function submitAIFilter() {
+    var input = document.getElementById('ai-filter-input');
+    var btn = document.getElementById('ai-filter-btn');
+    if (!input || !btn) return;
+
+    var prompt = input.value.trim();
+    if (!prompt) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Searching...';
+    btn.classList.add('ai-filter-loading');
+
+    fetch('/api/orders/ai-filter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt }),
+    })
+    .then(function(resp) {
+        // Extract explanation from HX-Trigger header
+        var trigger = resp.headers.get('HX-Trigger');
+        if (trigger) {
+            try {
+                var triggerData = JSON.parse(trigger);
+                if (triggerData.aiExplanation) {
+                    var banner = document.getElementById('ai-explanation');
+                    var text = document.getElementById('ai-explanation-text');
+                    if (banner && text) {
+                        text.textContent = triggerData.aiExplanation;
+                        banner.style.display = 'flex';
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        if (!resp.ok) {
+            return resp.text().then(function(t) { throw new Error(t); });
+        }
+        return resp.text();
+    })
+    .then(function(html) {
+        var tbody = document.getElementById('order-table-body');
+        if (tbody) tbody.innerHTML = html;
+    })
+    .catch(function(err) {
+        var tbody = document.getElementById('order-table-body');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">AI filter error: ' +
+                escapeHtml(err.message) + '</td></tr>';
+        }
+    })
+    .finally(function() {
+        btn.disabled = false;
+        btn.textContent = 'Search';
+        btn.classList.remove('ai-filter-loading');
+    });
+}
+
+function clearAIFilter() {
+    var banner = document.getElementById('ai-explanation');
+    if (banner) banner.style.display = 'none';
+
+    // Use the existing refreshTable trigger on the table body
+    htmx.trigger(document.body, 'refreshTable');
+}
+
+// Enter key support for AI filter input
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.target.id === 'ai-filter-input') {
+        e.preventDefault();
+        submitAIFilter();
+    }
+});
+
+// ============================================================
 // Shared utilities
 // ============================================================
 

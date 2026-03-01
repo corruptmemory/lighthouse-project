@@ -63,6 +63,8 @@ var funcMap = template.FuncMap{
 			return "status-delivered"
 		case "Return Requested":
 			return "status-return"
+		case "Confirmed":
+			return "status-confirmed"
 		default:
 			return ""
 		}

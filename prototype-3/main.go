@@ -73,6 +73,9 @@ func main() {
 	r.Post("/api/orders", h.HandleCreateOrder)
 	r.Put("/api/orders/{id}", h.HandleUpdateOrder)
 
+	// AI-powered order filter
+	r.Post("/api/orders/ai-filter", h.HandleAIFilter)
+
 	// Product list for order form
 	r.Get("/api/products", h.HandleListProducts)
 

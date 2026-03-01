@@ -286,6 +286,118 @@ func dispatchTool(cfg AgentConfig, name string, input json.RawMessage, emit Emit
 	}
 }
 
+func runFilterAgentLoop(ctx context.Context, cfg AgentConfig, prompt string) (*ReturnOrderIDsInput, error) {
+	client := anthropic.NewClient(option.WithAPIKey(cfg.APIKey))
+
+	messages := []anthropic.MessageParam{
+		anthropic.NewUserMessage(anthropic.NewTextBlock(prompt)),
+	}
+
+	systemPrompt := buildFilterSystemPrompt()
+
+	tools := []anthropic.ToolUnionParam{
+		{OfTool: &anthropic.ToolParam{
+			Name:        "execute_sql",
+			Description: anthropic.String("Execute a read-only SQL SELECT query against the SQLite database. Returns results as pipe-delimited text."),
+			InputSchema: anthropic.ToolInputSchemaParam{
+				Properties: map[string]interface{}{
+					"query": map[string]interface{}{
+						"type":        "string",
+						"description": "A read-only SQL SELECT query",
+					},
+				},
+				Required: []string{"query"},
+			},
+		}},
+		{OfTool: &anthropic.ToolParam{
+			Name:        "return_order_ids",
+			Description: anthropic.String("Return the final list of matching order IDs. Call this when you have identified all orders matching the user's request."),
+			InputSchema: anthropic.ToolInputSchemaParam{
+				Properties: map[string]interface{}{
+					"order_ids": map[string]interface{}{
+						"type":        "array",
+						"description": "Array of order_id integers from the orders table",
+						"items":       map[string]interface{}{"type": "integer"},
+					},
+					"explanation": map[string]interface{}{
+						"type":        "string",
+						"description": "Brief explanation of why these orders match",
+					},
+				},
+				Required: []string{"order_ids", "explanation"},
+			},
+		}},
+	}
+
+	maxIterations := 15
+	for i := 0; i < maxIterations; i++ {
+		resp, err := client.Messages.New(ctx, anthropic.MessageNewParams{
+			Model:     "claude-sonnet-4-20250514",
+			MaxTokens: 4096,
+			System: []anthropic.TextBlockParam{
+				{Text: systemPrompt},
+			},
+			Messages: messages,
+			Tools:    tools,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("anthropic API: %w", err)
+		}
+
+		var assistantBlocks []anthropic.ContentBlockParamUnion
+		var toolResultBlocks []anthropic.ContentBlockParamUnion
+		hasToolUse := false
+
+		for _, block := range resp.Content {
+			switch block.Type {
+			case "text":
+				assistantBlocks = append(assistantBlocks, anthropic.NewTextBlock(block.Text))
+			case "thinking":
+				assistantBlocks = append(assistantBlocks, anthropic.NewThinkingBlock(block.Signature, block.Thinking))
+			case "tool_use":
+				hasToolUse = true
+				assistantBlocks = append(assistantBlocks, anthropic.NewToolUseBlock(block.ID, block.Input, block.Name))
+
+				if block.Name == "return_order_ids" {
+					var result ReturnOrderIDsInput
+					inputJSON, _ := json.Marshal(block.Input)
+					if err := json.Unmarshal(inputJSON, &result); err != nil {
+						return nil, fmt.Errorf("parse return_order_ids: %w", err)
+					}
+					log.Printf("[filter] return_order_ids: %v — %s", result.OrderIDs, result.Explanation)
+					return &result, nil
+				}
+
+				if block.Name == "execute_sql" {
+					var inp ExecuteSQLInput
+					inputJSON, _ := json.Marshal(block.Input)
+					if err := json.Unmarshal(inputJSON, &inp); err != nil {
+						toolResultBlocks = append(toolResultBlocks, anthropic.NewToolResultBlock(block.ID, "Error parsing input", true))
+						continue
+					}
+					log.Printf("[filter] execute_sql: %s", inp.Query)
+					result, isError := executeSQL(cfg.DB, inp)
+					toolResultBlocks = append(toolResultBlocks, anthropic.NewToolResultBlock(block.ID, result, isError))
+				}
+			}
+		}
+
+		messages = append(messages, anthropic.NewAssistantMessage(assistantBlocks...))
+
+		if hasToolUse && len(toolResultBlocks) > 0 {
+			messages = append(messages, anthropic.NewUserMessage(toolResultBlocks...))
+			continue
+		}
+
+		// No tool use — model finished without calling return_order_ids
+		if resp.StopReason == anthropic.StopReasonEndTurn || resp.StopReason == "" {
+			break
+		}
+	}
+
+	return nil, fmt.Errorf("agent did not return order IDs within %d iterations", maxIterations)
+}
+
 func truncate(s string, max int) string {
 	if len(s) <= max {
 		return s

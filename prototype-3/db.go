@@ -179,6 +179,10 @@ func seedOrders(db *sql.DB) error {
 		{"LH-4503", "Claudia Wolf", "c.wolf@web.de", "Lighthouse Publications", 89.99, 1, "FedEx", "Ground", "Delivered", "2026-02-19"},
 		{"LH-4502", "David Park", "d.park@gmail.com", "Leuchtturm1917", 54.90, 2, "UPS", "Ground", "Delivered", "2026-02-18"},
 		{"LH-4501", "Anna Fischer", "a.fischer@gmx.de", "Mixed", 174.93, 5, "FedEx", "Ground", "Delivered", "2026-02-18"},
+		// Staples B2B orders — large quantities, "Confirmed" status
+		{"LH-4522", "Jennifer Park", "jennifer.park@staples.com", "Leuchtturm1917", 1897.00, 2, "FedEx", "Freight", "Confirmed", "2026-02-27"},
+		{"LH-4523", "Jennifer Park", "jennifer.park@staples.com", "Mixed", 1024.35, 3, "FedEx", "Freight", "Confirmed", "2026-02-27"},
+		{"LH-4524", "Jennifer Park", "jennifer.park@staples.com", "Leuchtturm1917", 1048.25, 2, "FedEx", "Freight", "Confirmed", "2026-02-27"},
 		// Older orders for weekly analysis
 		{"LH-4500", "William Scott", "w.scott@outlook.com", "Leuchtturm1917", 29.95, 1, "USPS", "Flat Rate", "Delivered", "2026-02-17"},
 		{"LH-4499", "Ingrid Muller", "i.muller@gmx.de", "Lighthouse Publications", 159.98, 2, "FedEx", "Ground", "Delivered", "2026-02-17"},
@@ -224,6 +228,14 @@ func seedOrders(db *sql.DB) error {
 		{"LH-4517", "LP-PR-VLT-WD", 1, 89.99},
 		{"LH-4517", "LP-CS-INT-LRG", 1, 49.99},
 		{"LH-4517", "LP-CS-QSL-5PK", 1, 34.99},
+		// Staples B2B order items (overlapping with Processing orders)
+		{"LH-4522", "LT-NB-A5-SUN", 50, 29.95},  // overlaps LH-4521
+		{"LH-4522", "LT-NB-A6-BLK", 30, 19.95},
+		{"LH-4523", "LP-CS-QDR-41", 20, 24.99},   // overlaps LH-4519
+		{"LH-4523", "LP-CS-QSL-5PK", 15, 34.99},  // overlaps LH-4519
+		{"LH-4523", "LT-WI-DG1-BLK", 10, 34.95},  // overlaps LH-4519
+		{"LH-4524", "LT-NB-A5-PMP", 25, 29.95},   // overlaps LH-4519
+		{"LH-4524", "LT-NB-A5-CHR", 10, 29.95},   // overlaps LH-4521
 	}
 
 	for _, item := range items {

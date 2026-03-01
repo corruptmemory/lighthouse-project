@@ -59,6 +59,12 @@
                 <!-- Top pane: Order list -->
                 <div class="master-pane">
                     <div class="filter-bar">
+                        <select class="filter-mode-select" id="filter-mode"
+                                onchange="toggleFilterMode(this.value)">
+                            <option value="fields">Fields</option>
+                            <option value="ai">AI Filter</option>
+                        </select>
+
                         <div class="filter-controls" id="filters"
                              hx-get="/api/orders"
                              hx-trigger="input changed delay:300ms from:find input, change from:find select"
@@ -71,6 +77,7 @@
                                 <option value="Shipped">Shipped</option>
                                 <option value="Delivered">Delivered</option>
                                 <option value="Return Requested">Return Requested</option>
+                                <option value="Confirmed">Confirmed</option>
                             </select>
                             <select name="brand" class="filter-input filter-select">
                                 <option value="">All Brands</option>
@@ -81,11 +88,27 @@
                             <input type="date" name="from" class="filter-input filter-date" title="From date">
                             <input type="date" name="to" class="filter-input filter-date" title="To date">
                         </div>
+
+                        <div class="filter-controls filter-ai-controls" id="ai-filters"
+                             style="display: none;">
+                            <input type="text" id="ai-filter-input"
+                                   placeholder="Describe which orders you're looking for..."
+                                   class="filter-input filter-ai-input">
+                            <button type="button" class="btn btn-primary"
+                                    id="ai-filter-btn" onclick="submitAIFilter()">
+                                Search
+                            </button>
+                        </div>
+
                         <button class="btn btn-primary"
                                 hx-get="/api/orders/new"
                                 hx-target="#detail-pane">
                             + New Order
                         </button>
+                    </div>
+                    <div class="ai-explanation" id="ai-explanation" style="display: none;">
+                        <button class="ai-explanation-close" onclick="clearAIFilter()">&times;</button>
+                        <span id="ai-explanation-text"></span>
                     </div>
                     <div class="table-wrapper">
                         <table class="order-table">

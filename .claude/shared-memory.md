@@ -4,7 +4,7 @@ This file is committed to the repo and shared across machines. Claude Code
 on each machine reads this for accumulated project knowledge. Machine-local
 notes stay in `~/.claude/projects/.../memory/MEMORY.md`.
 
-Last updated: 2026-02-28
+Last updated: 2026-03-01
 
 ## Project Status
 
@@ -55,6 +55,12 @@ Last updated: 2026-02-28
 - IIFE wrapping: `wrapScriptsInIIFE` in widgets.go fixes AI-generated top-level `return`
 - Widget persistence: `.widget.md` on disk, auto-loaded on dashboard page load
 - Ported from p2: session.go, tools.go, widgets.go, dashboards.go, agent.go
+- AI Filter on Orders page: one-shot agent filters orders by natural language
+  - `POST /api/orders/ai-filter` — sync request, returns HTML partial
+  - Two tools: `execute_sql` + `return_order_ids` (structured stop signal)
+  - Explanation via `HX-Trigger` header (htmx sideband pattern)
+  - Fields/AI mode dropdown toggles between standard filters and AI input
+  - Fixture data: 3 Staples B2B "Confirmed" orders with item overlaps
 
 ## Design Insights (confirmed across sessions)
 
@@ -71,6 +77,10 @@ Last updated: 2026-02-28
   gets full width for its job. Shared database means zero sync overhead.
 - AI-generated JS needs guardrails. Wrapping `<script>` in IIFE is a
   server-side defense against common LLM code generation antipatterns.
+- One-shot agent pattern (no SSE, no session) is simpler for "query → result"
+  UX. The `return_order_ids` tool gives a clean structured exit signal vs
+  parsing free-text. Agent iteration limit needs headroom (15, not 10) —
+  complex cross-table queries consume 10+ exploration steps.
 
 ## Schema Evolution (moved to separate repo)
 

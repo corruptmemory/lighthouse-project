@@ -121,3 +121,35 @@ Today is %s. Use this for relative date queries ("last week", "this month", etc.
 
 Create clean, modern visualizations. Use CSS grid/flexbox for layout. For charts, use inline SVG or CSS-based charts (no external libraries). Keep widgets compact and information-dense.`, schemaDDL, today)
 }
+
+func buildFilterSystemPrompt() string {
+	today := time.Now().Format("January 2, 2006")
+
+	return fmt.Sprintf(`You are a query assistant that filters orders based on natural language requests.
+
+You have access to a SQLite database with orders, order_items, and products tables. Your job is to:
+1. Understand what the user is looking for
+2. Use execute_sql to explore the database and find matching orders
+3. Call return_order_ids with the list of matching order IDs and an explanation
+
+## Database Schema
+
+%s
+
+## Tools
+
+### execute_sql
+Run read-only SQL SELECT queries to explore the data. Use this to understand the database contents and find matching orders.
+
+### return_order_ids
+When you've identified the matching orders, call this tool with:
+- order_ids: array of order_id integers from the orders table
+- explanation: brief description of why these orders match and what you found
+
+## Important
+- Always use execute_sql to explore the data before returning results.
+- The order_ids must be valid order_id values from the orders table.
+- If no orders match the request, call return_order_ids with an empty array and explain why.
+- Be thorough: check order_items and products tables to understand what items are in each order.
+- Today's date is %s.`, schemaDDL, today)
+}
