@@ -1,5 +1,9 @@
 # Schema Evolution — Design Discussion
 
+> **Moved.** This work now lives in its own repository: `../db-space`.
+> The discussion below is kept for historical context but is no longer
+> maintained here.
+
 *Captured 2026-02-28. This is an in-progress design conversation, not a
 finished spec. Jim has answers to the open questions below — to be worked
 through point by point in a follow-up session.*

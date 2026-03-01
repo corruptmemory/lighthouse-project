@@ -54,17 +54,13 @@ Last updated: 2026-02-28
   let users inspect. The full SQL visualizer (hover to see intermediate
   results) is the deeper trust unlock, not yet built.
 
-## Schema Evolution (in-progress design)
+## Schema Evolution (moved to separate repo)
 
-See `docs/schema-evolution-design.md` for the full discussion. Key ideas:
-- Schema as a Go data structure (declarative constant), not migration files
-- Blue-green DB migration: build new DB, swap, old DB stays untouched
-- CSV as interchange format, load without constraints, overlay after
-- Diff logic derived from comparing schema versions, not hand-written
-- AI agent context derived from schema data structure — no drift
-- Database-specific, not generic. Postgres all-in. No hedging.
-- Jim has answers to open questions (lineage, swap mechanics, procs/triggers)
-  — to be worked through in a follow-up session.
+The DB migration / schema evolution work now lives in `../db-space`. The
+design discussion in `docs/schema-evolution-design.md` is kept for historical
+context but is no longer maintained here. The key insight that still applies:
+the agent's system prompt contains the DDL, so schema changes in db-space
+must propagate to agent context in this project.
 
 ## Architecture Decisions
 

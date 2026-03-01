@@ -100,14 +100,14 @@ prototype, Sonnet is a reasonable middle ground. Consider:
   model for follow-ups
 - Letting the user choose: "fast mode" vs "accurate mode"
 
-### 4. Database Migrations (Flag Planted)
+### 4. Database Migrations (Moved to Separate Repo)
 
-The utter bane of sysadmin/DBAs. Ideas deferred to much later in the
-development plan, but the pain point is acknowledged: schema evolution over time
-needs to be handled gracefully. This is especially interesting in an AI-driven
-system where the agent's system prompt contains the DDL — schema changes need to
-propagate to the agent's context, and historical widgets may reference
-columns/tables that no longer exist.
+Schema evolution is now tracked in its own repository (`../db-space`). The
+design discussion that started here — schema-as-code, blue-green migration,
+CSV interchange — lives there now. The relevance to this project remains:
+the agent's system prompt contains the DDL, so schema changes must propagate
+to the agent's context, and historical widgets may reference columns/tables
+that no longer exist.
 
 ## Real-World Comparison: Power BI at Brighthouse Financial
 
