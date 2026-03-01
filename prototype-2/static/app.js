@@ -13,13 +13,15 @@ const widgetPanel = document.getElementById('widgetPanel');
 loadSavedWidgets();
 
 // Send message
-async function sendMessage(e) {
-    e.preventDefault();
-    const message = chatInput.value.trim();
+async function sendMessage(e, directMessage) {
+    if (e) e.preventDefault();
+    const message = directMessage || chatInput.value.trim();
     if (!message || isStreaming) return;
 
-    chatInput.value = '';
-    appendMessage('user', message);
+    if (!directMessage) {
+        chatInput.value = '';
+        appendMessage('user', message);
+    }
     setStreaming(true);
 
     // Create assistant message container
@@ -216,6 +218,15 @@ function handleSSEEvent(event, contentDiv) {
                     rowInfo.className = 'sql-result-info';
                     rowInfo.textContent = `${data.row_count} row${data.row_count !== 1 ? 's' : ''}`;
                     body.appendChild(rowInfo);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'sql-result-actions';
+                    const widgetBtn = document.createElement('button');
+                    widgetBtn.className = 'make-widget-btn';
+                    widgetBtn.textContent = 'Make a widget from this';
+                    widgetBtn.addEventListener('click', () => requestWidgetFromSQL(data.query, widgetBtn));
+                    actions.appendChild(widgetBtn);
+                    body.appendChild(actions);
                 }
             }
             scrollToBottom();
@@ -371,8 +382,8 @@ function removeWidget(slug) {
     if (!widgetArea.querySelector('.widget-card')) {
         widgetArea.innerHTML = `
             <div class="widget-placeholder">
-                <p>Widgets will appear here when the AI creates visualizations.</p>
-                <p class="hint">Try: "Show me a chart of stock levels by brand"</p>
+                <p>Widgets will appear here when you create them.</p>
+                <p class="hint">Click "Make a widget from this" on any SQL result, or ask directly in chat.</p>
             </div>
         `;
     }
@@ -381,10 +392,19 @@ function removeWidget(slug) {
 function clearWidgets() {
     widgetArea.innerHTML = `
         <div class="widget-placeholder">
-            <p>Widgets will appear here when the AI creates visualizations.</p>
-            <p class="hint">Try: "Show me a chart of stock levels by brand"</p>
+            <p>Widgets will appear here when you create them.</p>
+            <p class="hint">Click "Make a widget from this" on any SQL result, or ask directly in chat.</p>
         </div>
     `;
+}
+
+function requestWidgetFromSQL(query, btn) {
+    if (isStreaming) return;
+    btn.disabled = true;
+    btn.textContent = 'Creating widget...';
+
+    const message = `Create a widget visualization for this SQL query:\n\`\`\`sql\n${query}\n\`\`\``;
+    sendMessage(null, message);
 }
 
 // Load saved widgets from server on page load

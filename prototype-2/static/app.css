@@ -409,6 +409,38 @@ body {
     border-top: 1px solid var(--border-light);
 }
 
+.sql-result-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 6px 10px;
+    background: #f8f7f5;
+    border-top: 1px solid var(--border-light);
+}
+
+.make-widget-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent-lp);
+    background: none;
+    border: 1px solid var(--accent-lp);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.make-widget-btn:hover {
+    background: var(--accent-lp);
+    color: white;
+}
+
+.make-widget-btn:disabled {
+    color: var(--text-secondary);
+    border-color: var(--border);
+    background: none;
+    cursor: not-allowed;
+}
+
 /* Dashboard link in chat */
 .dashboard-link {
     margin: 8px 0;
