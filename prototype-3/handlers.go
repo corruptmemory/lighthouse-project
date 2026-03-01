@@ -794,6 +794,36 @@ func (h *Handlers) HandleBulkOpsExecute(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(resp)
 }
 
+// --- Chat session recovery ---
+
+func (h *Handlers) HandleListSessions(w http.ResponseWriter, r *http.Request) {
+	sessions, err := listChatSessions(h.chatsDir)
+	if err != nil {
+		log.Printf("list sessions: %v", err)
+		sessions = nil // return empty array, not error
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(sessions)
+}
+
+func (h *Handlers) HandleSessionHistory(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "session id required", http.StatusBadRequest)
+		return
+	}
+
+	summaries, err := loadChatSummaries(h.chatsDir, id)
+	if err != nil {
+		log.Printf("load session history: %v", err)
+		http.Error(w, "failed to load session history", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(summaries)
+}
+
 // --- Dashboard page (full page render) ---
 
 func (h *Handlers) HandleDashboardPage(w http.ResponseWriter, r *http.Request) {
@@ -846,9 +876,19 @@ func (h *Handlers) HandleChat(w http.ResponseWriter, r *http.Request) {
 		writeSSE(w, flusher, eventType, data)
 	}
 
+	// Track where new messages start so we can persist just this exchange
+	msgsBefore := len(session.Messages)
+
 	if err := runAgentLoop(r.Context(), h.agentCfg, session, req.Message, emit); err != nil {
 		log.Printf("Agent error: %v", err)
 		writeSSE(w, flusher, "error", map[string]string{"error": err.Error()})
+		return
+	}
+
+	// Persist the new messages from this exchange
+	newMessages := session.Messages[msgsBefore:]
+	if err := h.sessions.SaveExchange(session.ID, req.Message, newMessages); err != nil {
+		log.Printf("Save exchange: %v", err)
 	}
 }
 

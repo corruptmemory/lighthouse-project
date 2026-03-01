@@ -88,6 +88,7 @@ func LoadTemplates() (*Templates, error) {
 
 	layout, err := template.New("layout.html").Funcs(funcMap).ParseFiles(
 		filepath.Join(dir, "layout.html"),
+		filepath.Join(dir, "sidebar.html"),
 		filepath.Join(dir, "order-table.html"),
 	)
 	if err != nil {
@@ -117,6 +118,7 @@ func LoadTemplates() (*Templates, error) {
 
 	dashboard, err := template.New("dashboard.html").Funcs(funcMap).ParseFiles(
 		filepath.Join(dir, "dashboard.html"),
+		filepath.Join(dir, "sidebar.html"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("parse dashboard: %w", err)
@@ -148,5 +150,6 @@ func (t *Templates) RenderOrderForm(w io.Writer, data any) error {
 }
 
 func (t *Templates) RenderDashboard(w io.Writer) error {
-	return t.dashboard.ExecuteTemplate(w, "dashboard.html", nil)
+	data := struct{ Page string }{Page: "dashboard"}
+	return t.dashboard.ExecuteTemplate(w, "dashboard.html", data)
 }

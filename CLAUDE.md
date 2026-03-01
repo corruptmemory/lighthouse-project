@@ -49,6 +49,11 @@ Each prototype builds on the prior one unless otherwise instructed. Prototype-4
 has all features of prototype-3, prototype-3 has all features of prototype-2,
 etc.
 
+Starting with prototype-4:
+- Use templ (`github.com/a-h/templ`) for type-safe HTML templates
+- Use goldmark (`github.com/yuin/goldmark`) for markdown parsing instead of
+  regular expressions
+
 ## Code Style
 
 - Format Go with `gofmt`

@@ -17,6 +17,7 @@ type Options struct {
 	DBPath     string `long:"db-path" default:":memory:" description:"SQLite database path"`
 	APIKey     string `long:"api-key" description:"Anthropic API key"`
 	WidgetsDir string `long:"widgets-dir" default:"widgets" description:"Directory for widget/dashboard markdown files"`
+	ChatsDir   string `long:"chats-dir" default:"chats" description:"Directory for persistent chat history"`
 }
 
 func main() {
@@ -40,16 +41,20 @@ func main() {
 		log.Fatalf("load templates: %v", err)
 	}
 
-	// Ensure widgets directory exists
+	// Ensure data directories exist
 	if err := os.MkdirAll(opts.WidgetsDir, 0o755); err != nil {
 		log.Fatalf("create widgets dir: %v", err)
+	}
+	if err := os.MkdirAll(opts.ChatsDir, 0o755); err != nil {
+		log.Fatalf("create chats dir: %v", err)
 	}
 
 	h := &Handlers{
 		db:         db,
 		tmpls:      tmpls,
-		sessions:   NewSessionStore(),
+		sessions:   NewSessionStore(opts.ChatsDir),
 		widgetsDir: opts.WidgetsDir,
+		chatsDir:   opts.ChatsDir,
 		agentCfg: AgentConfig{
 			APIKey:     opts.APIKey,
 			DB:         db,
@@ -62,8 +67,8 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	// Full page renders
-	r.Get("/", h.HandleIndex)
-	r.Get("/dashboard", h.HandleDashboardPage)
+	r.Get("/", h.HandleDashboardPage)
+	r.Get("/orders", h.HandleIndex)
 
 	// Order CRUD — HTML partials
 	r.Get("/api/orders", h.HandleListOrders)
@@ -85,6 +90,8 @@ func main() {
 
 	// AI chat + widgets
 	r.Post("/api/chat", h.HandleChat)
+	r.Get("/api/chat/sessions", h.HandleListSessions)
+	r.Get("/api/chat/sessions/{id}/history", h.HandleSessionHistory)
 	r.Get("/api/widgets", h.HandleListWidgets)
 	r.Get("/api/widgets/{slug}", h.HandleGetWidgetBySlug)
 	r.Get("/api/dashboards/{slug}", h.HandleDashboardView)
@@ -102,5 +109,6 @@ type Handlers struct {
 	tmpls      *Templates
 	sessions   *SessionStore
 	widgetsDir string
+	chatsDir   string
 	agentCfg   AgentConfig
 }

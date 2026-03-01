@@ -24,6 +24,167 @@
     // Focus input
     chatInput.focus();
 
+    // Check for previous sessions to recover
+    checkForSessions();
+
+    async function checkForSessions() {
+        try {
+            var resp = await fetch('/api/chat/sessions');
+            if (!resp.ok) return;
+            var sessions = await resp.json();
+            if (!sessions || sessions.length === 0) return;
+
+            // Replace the welcome message with recovery card(s)
+            var welcome = chatMessages.querySelector('.message.assistant');
+            if (!welcome) return;
+
+            var container = document.createElement('div');
+            container.className = 'session-recovery';
+            container.id = 'sessionRecovery';
+
+            var header = document.createElement('div');
+            header.className = 'session-recovery-header';
+            var headerStrong = document.createElement('strong');
+            headerStrong.textContent = 'Previous conversations';
+            header.appendChild(headerStrong);
+            container.appendChild(header);
+
+            for (var i = 0; i < sessions.length; i++) {
+                var s = sessions[i];
+                var card = document.createElement('div');
+                card.className = 'session-recovery-card';
+
+                var preview = s.first_prompt;
+                if (preview.length > 80) preview = preview.substring(0, 80) + '...';
+
+                var previewDiv = document.createElement('div');
+                previewDiv.className = 'session-recovery-preview';
+                previewDiv.textContent = preview;
+                card.appendChild(previewDiv);
+
+                var meta = s.exchanges + ' exchange' + (s.exchanges !== 1 ? 's' : '');
+                var ago = timeAgo(s.last_modified);
+                if (ago) meta += ' \u00b7 ' + ago;
+
+                var metaDiv = document.createElement('div');
+                metaDiv.className = 'session-recovery-meta';
+                metaDiv.textContent = meta;
+                card.appendChild(metaDiv);
+
+                var actionsDiv = document.createElement('div');
+                actionsDiv.className = 'session-recovery-actions';
+                var continueBtn = document.createElement('button');
+                continueBtn.className = 'btn btn-primary btn-small session-continue-btn';
+                continueBtn.dataset.sessionId = s.id;
+                continueBtn.textContent = 'Continue';
+                continueBtn.addEventListener('click', (function(sid) {
+                    return function() { continueSession(sid); };
+                })(s.id));
+                actionsDiv.appendChild(continueBtn);
+                card.appendChild(actionsDiv);
+
+                container.appendChild(card);
+            }
+
+            var newBtn = document.createElement('button');
+            newBtn.className = 'btn btn-secondary session-new-btn';
+            newBtn.textContent = 'New Conversation';
+            newBtn.addEventListener('click', function() {
+                dismissRecovery();
+            });
+            container.appendChild(newBtn);
+
+            welcome.replaceWith(container);
+        } catch (e) {
+            // Silently fail — keep the welcome message
+        }
+    }
+
+    async function continueSession(id) {
+        try {
+            var resp = await fetch('/api/chat/sessions/' + encodeURIComponent(id) + '/history');
+            if (!resp.ok) return;
+            var history = await resp.json();
+            if (!history || history.length === 0) return;
+
+            sessionId = id;
+
+            // Clear chat area
+            chatMessages.textContent = '';
+
+            // Render each exchange
+            for (var i = 0; i < history.length; i++) {
+                appendMessage('user', history[i].prompt);
+                if (history[i].response) {
+                    var msg = appendMessage('assistant', '');
+                    var content = msg.querySelector('.message-content');
+                    var textDiv = document.createElement('div');
+                    textDiv.className = 'message-text';
+                    textDiv.innerHTML = renderMarkdown(history[i].response);
+                    content.appendChild(textDiv);
+                }
+            }
+
+            scrollToBottom();
+        } catch (e) {
+            // Fail silently
+        }
+    }
+
+    function dismissRecovery() {
+        var recovery = document.getElementById('sessionRecovery');
+        if (recovery) {
+            var welcome = document.createElement('div');
+            welcome.className = 'message assistant';
+
+            var contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+
+            var p1 = document.createElement('p');
+            p1.textContent = "Hello! I'm your business intelligence assistant. I can query the database, analyze orders, and create data visualizations.";
+            contentDiv.appendChild(p1);
+
+            var p2 = document.createElement('p');
+            p2.textContent = 'Try asking me things like:';
+            contentDiv.appendChild(p2);
+
+            var ul = document.createElement('ul');
+            var suggestions = [
+                '"What\'s our revenue by brand this month?"',
+                '"Show me orders from the last week"',
+                '"Which products are running low on stock?"',
+            ];
+            for (var i = 0; i < suggestions.length; i++) {
+                var li = document.createElement('li');
+                li.textContent = suggestions[i];
+                ul.appendChild(li);
+            }
+            contentDiv.appendChild(ul);
+
+            welcome.appendChild(contentDiv);
+            recovery.replaceWith(welcome);
+        }
+    }
+
+    function timeAgo(isoString) {
+        try {
+            var then = new Date(isoString);
+            var now = new Date();
+            var seconds = Math.floor((now - then) / 1000);
+
+            if (seconds < 60) return 'just now';
+            var minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return minutes + 'm ago';
+            var hours = Math.floor(minutes / 60);
+            if (hours < 24) return hours + 'h ago';
+            var days = Math.floor(hours / 24);
+            if (days < 30) return days + 'd ago';
+            return '';
+        } catch (e) {
+            return '';
+        }
+    }
+
     async function sendMessage(e, directMessage) {
         if (e) e.preventDefault();
         var message = directMessage || chatInput.value.trim();
