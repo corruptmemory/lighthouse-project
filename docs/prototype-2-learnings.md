@@ -57,6 +57,14 @@ The `loadSavedWidgets()` function on the frontend fetches
 `GET /api/widgets` and populates the sidebar. This was the whole point of
 prototype-2 and it works cleanly.
 
+**Gotcha — SQLite `:memory:` and connection pools:** The default DB path is
+`:memory:`, which creates a private database per connection. Go's
+`database/sql` manages a pool, so `InitDB` seeds tables on one connection but
+later HTTP requests may get a different connection with an empty DB. Fix:
+`db.SetMaxOpenConns(1)` forces all operations through one connection. This is
+the standard fix for in-memory SQLite with Go and is fine for a single-user
+prototype. For production, use an on-disk DB or `file::memory:?cache=shared`.
+
 ### Agent self-correction on SQL errors
 
 The agent attempted a query referencing a column that didn't exist
@@ -207,7 +215,7 @@ prototype-2/
   tools.go              # executeSQL + executeSQLStructured, widget/dashboard input structs
   widgets.go            # ParsedWidget, parse/write/load/list/render functions
   dashboards.go         # ParsedDashboard, parse/write/load/render functions
-  db.go                 # SQLite schema DDL + seed data (unchanged from p1)
+  db.go                 # SQLite schema DDL + seed data + SetMaxOpenConns(1) for :memory:
   handlers.go           # +HandleGetWidgetBySlug, +HandleDashboard, +HandleListWidgets
   session.go            # In-memory session store (unchanged from p1)
   systemprompt.go       # Rewritten — window.WIDGET_DATA pattern, 4 tool descriptions

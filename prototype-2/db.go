@@ -64,6 +64,7 @@ func InitDB(path string) (*sql.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open: %w", err)
 	}
+	db.SetMaxOpenConns(1)
 
 	if _, err := db.Exec(schemaDDL); err != nil {
 		return nil, fmt.Errorf("schema: %w", err)

@@ -41,6 +41,7 @@ Last updated: 2026-02-28
 - Slug-based routing: `/api/widgets/{slug}`, `/api/dashboards/{slug}`
 - Iframes as security boundary: `sandbox="allow-scripts"`
 - Two SQL execution paths: pipe-delimited (for agent) vs structured (for SSE/widgets)
+- `db.SetMaxOpenConns(1)` required for `:memory:` SQLite (pool creates separate DBs per connection)
 
 ## Design Insights (confirmed across sessions)
 
