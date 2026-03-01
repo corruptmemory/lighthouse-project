@@ -78,6 +78,40 @@ Last updated: 2026-03-01
     (clean text only, no tool-use blocks), sets JS `sessionId` for routing
   - "New Conversation" dismisses card, restores welcome message
 
+## Structured Tools Design (in progress — `new-tools-for-the-agent.md`)
+
+Replacing raw `execute_sql` with domain-specific structured tools. The agent
+becomes a natural-language-to-structured-query translator; Go becomes the
+structured-query-to-SQL compiler. Smaller error surface on both sides.
+
+### `order_search` — query tool (designed, not yet implemented)
+- Returns orders with inlined `order_items` JSON array (uses SQLite
+  `json_group_array` / `json_object` — equivalent to Postgres `json_agg`)
+- Rich filter params: order_number (single or array), customer_name, status
+  (IN query), order_date (expression mini-language: `between()`, `>=`, etc.),
+  `contains_product` (nested: brand/sku/name for cross-table filtering)
+- Wildcard syntax: GLOB (`*KABE*`, `LH-50??`) — case-sensitive, maps to
+  SQLite native GLOB operator
+- Needs: `sort`, `limit`, `offset` params (proposed, not yet in spec)
+- Primary use case: AI Bulk Actions query step
+
+### `order_stats` — analytics tool (conceptual, not yet designed)
+- Recurring shapes: count/sum by category, top-N, time series, scalar facts
+- Possible params: `group_by`, `metric` (enum: count, sum(total), avg...),
+  `filter`, `sort`, `limit`, optional time bucketing (`month(order_date)`)
+- Parked — query + mutation tools are the clearer wins first
+
+### Mutation tools (conceptual, not yet designed)
+- `update_order` with structured `set` params instead of raw DML
+- Human reviews readable descriptions ("Set LH-5012 status to Shipped")
+  instead of raw SQL strings
+- Same propose-review-execute trust boundary, safer WHERE clauses
+
+### Design decisions made
+- GLOB for wildcards (familiar to users, maps to SQLite native)
+- SQLite JSON functions confirmed viable (`json_group_array`, `json_object`,
+  `->>` operator since 3.38+)
+
 ## Design Insights (confirmed across sessions)
 
 - Widget creation should be user-driven, not AI-initiated. The agent answers
