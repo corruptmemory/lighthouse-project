@@ -683,6 +683,117 @@ func (h *Handlers) queryOrdersByIDs(ids []int) ([]Order, error) {
 	return orders, rows.Err()
 }
 
+// --- AI Bulk Operations ---
+
+type BulkOpsRequest struct {
+	Prompt string `json:"prompt"`
+}
+
+type BulkOpsExecuteRequest struct {
+	Actions []ProposedAction `json:"actions"`
+}
+
+type ActionResult struct {
+	Description  string `json:"description"`
+	SQL          string `json:"sql"`
+	Success      bool   `json:"success"`
+	RowsAffected int64  `json:"rows_affected"`
+	Error        string `json:"error,omitempty"`
+}
+
+type BulkOpsExecuteResponse struct {
+	Success bool           `json:"success"`
+	Results []ActionResult `json:"results"`
+}
+
+func (h *Handlers) HandleBulkOpsPropose(w http.ResponseWriter, r *http.Request) {
+	var req BulkOpsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Prompt == "" {
+		http.Error(w, "prompt is required", http.StatusBadRequest)
+		return
+	}
+
+	result, err := runBulkOpsAgentLoop(r.Context(), h.agentCfg, req.Prompt)
+	if err != nil {
+		log.Printf("Bulk ops error: %v", err)
+		http.Error(w, fmt.Sprintf("AI error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
+func (h *Handlers) HandleBulkOpsExecute(w http.ResponseWriter, r *http.Request) {
+	var req BulkOpsExecuteRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Actions) == 0 {
+		http.Error(w, "no actions provided", http.StatusBadRequest)
+		return
+	}
+
+	tx, err := h.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("begin transaction: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	results := make([]ActionResult, len(req.Actions))
+	allSuccess := true
+
+	for i, action := range req.Actions {
+		results[i] = ActionResult{
+			Description: action.Description,
+			SQL:         action.SQL,
+		}
+
+		if !allSuccess {
+			// Previous action failed — skip remaining
+			results[i].Error = "skipped due to earlier failure"
+			continue
+		}
+
+		rowsAffected, err := executeDML(tx, action.SQL)
+		if err != nil {
+			results[i].Error = err.Error()
+			allSuccess = false
+			log.Printf("[bulk-ops] action %d failed: %v", i+1, err)
+		} else {
+			results[i].Success = true
+			results[i].RowsAffected = rowsAffected
+			log.Printf("[bulk-ops] action %d OK: %d rows affected", i+1, rowsAffected)
+		}
+	}
+
+	if allSuccess {
+		if err := tx.Commit(); err != nil {
+			http.Error(w, fmt.Sprintf("commit: %v", err), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("[bulk-ops] transaction committed: %d actions", len(req.Actions))
+	} else {
+		log.Printf("[bulk-ops] transaction rolled back due to failure")
+	}
+
+	resp := BulkOpsExecuteResponse{
+		Success: allSuccess,
+		Results: results,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
 // --- Dashboard page (full page render) ---
 
 func (h *Handlers) HandleDashboardPage(w http.ResponseWriter, r *http.Request) {

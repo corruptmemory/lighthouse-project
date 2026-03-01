@@ -398,6 +398,130 @@ func runFilterAgentLoop(ctx context.Context, cfg AgentConfig, prompt string) (*R
 	return nil, fmt.Errorf("agent did not return order IDs within %d iterations", maxIterations)
 }
 
+func runBulkOpsAgentLoop(ctx context.Context, cfg AgentConfig, prompt string) (*ProposeActionsInput, error) {
+	client := anthropic.NewClient(option.WithAPIKey(cfg.APIKey))
+
+	messages := []anthropic.MessageParam{
+		anthropic.NewUserMessage(anthropic.NewTextBlock(prompt)),
+	}
+
+	systemPrompt := buildBulkOpsSystemPrompt()
+
+	tools := []anthropic.ToolUnionParam{
+		{OfTool: &anthropic.ToolParam{
+			Name:        "execute_sql",
+			Description: anthropic.String("Execute a read-only SQL SELECT query against the SQLite database. Returns results as pipe-delimited text."),
+			InputSchema: anthropic.ToolInputSchemaParam{
+				Properties: map[string]interface{}{
+					"query": map[string]interface{}{
+						"type":        "string",
+						"description": "A read-only SQL SELECT query",
+					},
+				},
+				Required: []string{"query"},
+			},
+		}},
+		{OfTool: &anthropic.ToolParam{
+			Name:        "propose_actions",
+			Description: anthropic.String("Propose a set of DML actions to execute. Call this when you have determined all the changes needed. Each action has a human-readable description and a single SQL DML statement."),
+			InputSchema: anthropic.ToolInputSchemaParam{
+				Properties: map[string]interface{}{
+					"actions": map[string]interface{}{
+						"type":        "array",
+						"description": "Array of proposed DML actions",
+						"items": map[string]interface{}{
+							"type": "object",
+							"properties": map[string]interface{}{
+								"description": map[string]interface{}{
+									"type":        "string",
+									"description": "Human-readable description of what this action does, with concrete values",
+								},
+								"sql": map[string]interface{}{
+									"type":        "string",
+									"description": "A single UPDATE, INSERT, or DELETE SQL statement",
+								},
+							},
+							"required": []string{"description", "sql"},
+						},
+					},
+					"summary": map[string]interface{}{
+						"type":        "string",
+						"description": "Brief summary of the overall operation and any assumptions made",
+					},
+				},
+				Required: []string{"actions", "summary"},
+			},
+		}},
+	}
+
+	maxIterations := 15
+	for i := 0; i < maxIterations; i++ {
+		resp, err := client.Messages.New(ctx, anthropic.MessageNewParams{
+			Model:     "claude-sonnet-4-20250514",
+			MaxTokens: 4096,
+			System: []anthropic.TextBlockParam{
+				{Text: systemPrompt},
+			},
+			Messages: messages,
+			Tools:    tools,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("anthropic API: %w", err)
+		}
+
+		var assistantBlocks []anthropic.ContentBlockParamUnion
+		var toolResultBlocks []anthropic.ContentBlockParamUnion
+		hasToolUse := false
+
+		for _, block := range resp.Content {
+			switch block.Type {
+			case "text":
+				assistantBlocks = append(assistantBlocks, anthropic.NewTextBlock(block.Text))
+			case "thinking":
+				assistantBlocks = append(assistantBlocks, anthropic.NewThinkingBlock(block.Signature, block.Thinking))
+			case "tool_use":
+				hasToolUse = true
+				assistantBlocks = append(assistantBlocks, anthropic.NewToolUseBlock(block.ID, block.Input, block.Name))
+
+				if block.Name == "propose_actions" {
+					var result ProposeActionsInput
+					inputJSON, _ := json.Marshal(block.Input)
+					if err := json.Unmarshal(inputJSON, &result); err != nil {
+						return nil, fmt.Errorf("parse propose_actions: %w", err)
+					}
+					log.Printf("[bulk-ops] propose_actions: %d actions — %s", len(result.Actions), result.Summary)
+					return &result, nil
+				}
+
+				if block.Name == "execute_sql" {
+					var inp ExecuteSQLInput
+					inputJSON, _ := json.Marshal(block.Input)
+					if err := json.Unmarshal(inputJSON, &inp); err != nil {
+						toolResultBlocks = append(toolResultBlocks, anthropic.NewToolResultBlock(block.ID, "Error parsing input", true))
+						continue
+					}
+					log.Printf("[bulk-ops] execute_sql: %s", inp.Query)
+					result, isError := executeSQL(cfg.DB, inp)
+					toolResultBlocks = append(toolResultBlocks, anthropic.NewToolResultBlock(block.ID, result, isError))
+				}
+			}
+		}
+
+		messages = append(messages, anthropic.NewAssistantMessage(assistantBlocks...))
+
+		if hasToolUse && len(toolResultBlocks) > 0 {
+			messages = append(messages, anthropic.NewUserMessage(toolResultBlocks...))
+			continue
+		}
+
+		if resp.StopReason == anthropic.StopReasonEndTurn || resp.StopReason == "" {
+			break
+		}
+	}
+
+	return nil, fmt.Errorf("agent did not propose actions within %d iterations", maxIterations)
+}
+
 func truncate(s string, max int) string {
 	if len(s) <= max {
 		return s

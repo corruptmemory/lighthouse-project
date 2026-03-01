@@ -61,6 +61,13 @@ Last updated: 2026-03-01
   - Explanation via `HX-Trigger` header (htmx sideband pattern)
   - Fields/AI mode dropdown toggles between standard filters and AI input
   - Fixture data: 3 Staples B2B "Confirmed" orders with item overlaps
+- AI Bulk Operations: propose-review-execute modal with transactional DML
+  - `POST /api/orders/ai-bulk-ops` — agent proposes actions as JSON
+  - `POST /api/orders/ai-bulk-ops/execute` — executes selected actions in one tx
+  - Two tools: `execute_sql` + `propose_actions` (structured stop signal)
+  - All-or-nothing: `db.BeginTx` + `defer tx.Rollback()`, commit only if all succeed
+  - `executeDML()` whitelists UPDATE/INSERT/DELETE, blocks DDL keywords
+  - Works end-to-end, needs UX polish (next iteration)
 
 ## Design Insights (confirmed across sessions)
 
@@ -81,6 +88,11 @@ Last updated: 2026-03-01
   UX. The `return_order_ids` tool gives a clean structured exit signal vs
   parsing free-text. Agent iteration limit needs headroom (15, not 10) —
   complex cross-table queries consume 10+ exploration steps.
+- Propose-review-execute pattern for AI bulk operations: the agent proposes
+  structured actions, human reviews via checkboxes, execution happens in one
+  DB transaction. `defer tx.Rollback()` + conditional `tx.Commit()` is the
+  cleanest Go pattern for all-or-nothing semantics.
+- Each prototype builds on the prior one (cumulative feature set).
 
 ## Schema Evolution (moved to separate repo)
 

@@ -69,6 +69,55 @@ The chat uses `fetch()` with `ReadableStream` rather than `EventSource`
 because the endpoint is POST (sends message body). This is the same approach
 as prototype-2, confirmed to work well across the two-page architecture.
 
+### AI Filter: one-shot agent for natural language queries
+
+The AI Filter feature adds a "Fields / AI" mode toggle to the order filter bar.
+In AI mode, users type natural language like "Processing orders with items that
+overlap Staples' large Confirmed orders" and the agent finds matching rows.
+
+Architecture: a one-shot agent loop (`runFilterAgentLoop`) with just two tools:
+`execute_sql` (read-only exploration) and `return_order_ids` (structured stop
+signal). The stop-signal pattern avoids parsing free-text — the agent calls
+`return_order_ids({order_ids: [...], explanation: "..."})` and the loop exits
+immediately. The explanation is delivered to the UI via an `HX-Trigger` response
+header (htmx sideband pattern), not in the HTML body.
+
+Key learnings:
+- Agent iteration limit needs headroom: 15, not 10. Complex cross-table queries
+  use 10+ SQL explorations before the agent is confident.
+- The `from:find input` htmx trigger pattern doesn't match a `<div>` — clearing
+  the AI filter must use `htmx.trigger(body, 'refreshTable')`.
+
+### AI Bulk Operations: propose-review-execute with transactions
+
+The bulk operations modal completes the filter-then-act workflow. Users type a
+natural language request (e.g., "Divert overlapping items from Processing orders
+to Staples orders"), an AI agent proposes concrete DML actions, the user reviews
+via checkboxes, and executes in a single database transaction.
+
+Two endpoints:
+- `POST /api/orders/ai-bulk-ops` — agent explores DB, returns proposed actions as JSON
+- `POST /api/orders/ai-bulk-ops/execute` — runs selected actions in one transaction
+
+The agent uses the same one-shot pattern as the filter agent, with `execute_sql`
+for exploration and `propose_actions` as the structured stop signal. Each
+proposed action has a human-readable description and one SQL statement.
+
+Transaction semantics: all-or-nothing via `db.BeginTx`. If action 3 of 5 fails,
+the entire transaction rolls back, and the results UI shows which action failed
+(red), which succeeded before it (green, but rolled back), and which were
+skipped (grey). `defer tx.Rollback()` handles the rollback automatically unless
+`tx.Commit()` is called first.
+
+DML safety: `executeDML()` whitelists UPDATE/INSERT/DELETE and blocks DDL
+keywords (DROP, ALTER, CREATE, ATTACH, DETACH). The human-in-the-loop checkbox
+selection is the primary trust boundary.
+
+Current state: works end-to-end but operates at a "brutally raw" level — the
+agent generates valid SQL with correct descriptions, transactions commit/rollback
+properly, but the UX needs polish (action grouping, undo, progress feedback,
+partial selection defaults, etc.).
+
 ## What's Still Rough
 
 - Widget iframe height is fixed; should auto-resize based on content
@@ -76,6 +125,8 @@ as prototype-2, confirmed to work well across the two-page architecture.
 - Chat history is in-memory per session; lost on server restart
 - The sidebar is duplicated in two templates (layout.html, dashboard.html)
   rather than shared via template composition — acceptable for prototyping
+- Bulk operations modal needs UX refinement: action grouping, progress
+  feedback, better default selection, undo capability
 
 ## Files
 

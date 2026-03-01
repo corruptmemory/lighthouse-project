@@ -6,6 +6,45 @@ import (
 	"strings"
 )
 
+// Bulk operations types
+
+type ProposedAction struct {
+	Description string `json:"description"`
+	SQL         string `json:"sql"`
+}
+
+type ProposeActionsInput struct {
+	Actions []ProposedAction `json:"actions"`
+	Summary string           `json:"summary"`
+}
+
+// executeDML runs a single DML statement within a transaction.
+// It whitelists UPDATE/INSERT/DELETE and blocks DDL keywords.
+func executeDML(tx *sql.Tx, query string) (int64, error) {
+	query = strings.TrimSpace(query)
+	upper := strings.ToUpper(query)
+
+	// Must start with a DML verb
+	if !strings.HasPrefix(upper, "UPDATE") &&
+		!strings.HasPrefix(upper, "INSERT") &&
+		!strings.HasPrefix(upper, "DELETE") {
+		return 0, fmt.Errorf("only UPDATE, INSERT, and DELETE statements are allowed")
+	}
+
+	// Block DDL keywords anywhere in the statement
+	for _, kw := range []string{"DROP", "ALTER", "CREATE", "ATTACH", "DETACH"} {
+		if strings.Contains(upper, kw+" ") || strings.HasSuffix(upper, kw) {
+			return 0, fmt.Errorf("%s operations are not allowed", kw)
+		}
+	}
+
+	result, err := tx.Exec(query)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 // QueryResult is the structured representation of SQL results,
 // used for both SSE sql_result events and widget data injection.
 type QueryResult struct {

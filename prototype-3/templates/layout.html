@@ -59,11 +59,23 @@
                 <!-- Top pane: Order list -->
                 <div class="master-pane">
                     <div class="filter-bar">
-                        <select class="filter-mode-select" id="filter-mode"
-                                onchange="toggleFilterMode(this.value)">
-                            <option value="fields">Fields</option>
-                            <option value="ai">AI Filter</option>
-                        </select>
+                        <div class="filter-bar-top">
+                            <select class="filter-mode-select" id="filter-mode"
+                                    onchange="toggleFilterMode(this.value)">
+                                <option value="fields">Fields</option>
+                                <option value="ai">AI Filter</option>
+                            </select>
+                            <div class="filter-bar-actions">
+                                <button class="btn btn-secondary" onclick="openBulkOpsModal()">
+                                    AI Bulk Operations
+                                </button>
+                                <button class="btn btn-primary"
+                                        hx-get="/api/orders/new"
+                                        hx-target="#detail-pane">
+                                    + New Order
+                                </button>
+                            </div>
+                        </div>
 
                         <div class="filter-controls" id="filters"
                              hx-get="/api/orders"
@@ -99,12 +111,6 @@
                                 Search
                             </button>
                         </div>
-
-                        <button class="btn btn-primary"
-                                hx-get="/api/orders/new"
-                                hx-target="#detail-pane">
-                            + New Order
-                        </button>
                     </div>
                     <div class="ai-explanation" id="ai-explanation" style="display: none;">
                         <button class="ai-explanation-close" onclick="clearAIFilter()">&times;</button>
@@ -157,6 +163,42 @@
         }
     });
     </script>
+    <!-- Bulk Operations Modal -->
+    <div class="modal-overlay" id="bulk-ops-modal" style="display: none;">
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h2>AI Bulk Operations</h2>
+                <button class="modal-close" onclick="closeBulkOpsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="bulk-ops-prompt-area">
+                    <label for="bulk-ops-input">Describe the changes:</label>
+                    <div class="bulk-ops-prompt-row">
+                        <input type="text" id="bulk-ops-input"
+                               placeholder="e.g., Divert overlapping items from Processing orders to Staples orders"
+                               class="filter-input bulk-ops-input">
+                        <button type="button" class="btn btn-primary" id="bulk-ops-generate-btn"
+                                onclick="generateBulkOps()">Generate</button>
+                    </div>
+                </div>
+                <div class="bulk-ops-content" id="bulk-ops-content">
+                    <div class="bulk-ops-placeholder">
+                        Describe what changes you want to make and click Generate.
+                        The AI will propose specific actions for your review.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="bulk-ops-footer" style="display: none;">
+                <span class="bulk-ops-count" id="bulk-ops-count">0 actions selected</span>
+                <div class="modal-footer-actions">
+                    <button class="btn btn-secondary" onclick="closeBulkOpsModal()">Cancel</button>
+                    <button class="btn btn-primary" id="bulk-ops-execute-btn"
+                            onclick="executeBulkOps()" disabled>Execute (0)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="/app.js"></script>
 </body>
 </html>

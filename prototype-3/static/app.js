@@ -758,6 +758,290 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ============================================================
+// AI Bulk Operations Modal (Orders page)
+// ============================================================
+
+(function() {
+    var modal = document.getElementById('bulk-ops-modal');
+    if (!modal) return; // Not on orders page
+
+    var proposedActions = [];
+    var didExecute = false;
+
+    window.openBulkOpsModal = function() {
+        modal.style.display = 'flex';
+        proposedActions = [];
+        didExecute = false;
+
+        var content = document.getElementById('bulk-ops-content');
+        content.innerHTML =
+            '<div class="bulk-ops-placeholder">' +
+            'Describe what changes you want to make and click Generate. ' +
+            'The AI will propose specific actions for your review.' +
+            '</div>';
+
+        var footer = document.getElementById('bulk-ops-footer');
+        footer.style.display = 'none';
+
+        var input = document.getElementById('bulk-ops-input');
+        input.value = '';
+        input.disabled = false;
+        var genBtn = document.getElementById('bulk-ops-generate-btn');
+        genBtn.disabled = false;
+        genBtn.textContent = 'Generate';
+
+        setTimeout(function() { input.focus(); }, 50);
+    };
+
+    window.closeBulkOpsModal = function() {
+        modal.style.display = 'none';
+        if (didExecute) {
+            htmx.trigger(document.body, 'refreshTable');
+        }
+    };
+
+    window.generateBulkOps = function() {
+        var input = document.getElementById('bulk-ops-input');
+        var btn = document.getElementById('bulk-ops-generate-btn');
+        var content = document.getElementById('bulk-ops-content');
+        var footer = document.getElementById('bulk-ops-footer');
+
+        var prompt = input.value.trim();
+        if (!prompt) return;
+
+        input.disabled = true;
+        btn.disabled = true;
+        btn.textContent = 'Generating...';
+        footer.style.display = 'none';
+
+        content.innerHTML =
+            '<div class="bulk-ops-loading">' +
+            '<span class="loading-dots"><span></span><span></span><span></span></span> ' +
+            'AI is analyzing the database and proposing actions...' +
+            '</div>';
+
+        fetch('/api/orders/ai-bulk-ops', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: prompt }),
+        })
+        .then(function(resp) {
+            if (!resp.ok) {
+                return resp.text().then(function(t) { throw new Error(t); });
+            }
+            return resp.json();
+        })
+        .then(function(data) {
+            proposedActions = data.actions || [];
+            renderProposedActions(content, data.summary, proposedActions);
+            footer.style.display = 'flex';
+            updateBulkOpsCount();
+        })
+        .catch(function(err) {
+            content.innerHTML =
+                '<div class="bulk-ops-placeholder" style="color: var(--danger);">' +
+                'Error: ' + escapeHtml(err.message) +
+                '</div>';
+        })
+        .finally(function() {
+            input.disabled = false;
+            btn.disabled = false;
+            btn.textContent = 'Generate';
+        });
+    };
+
+    function renderProposedActions(container, summary, actions) {
+        var html = '';
+
+        if (summary) {
+            html += '<div class="bulk-ops-summary">' + escapeHtml(summary) + '</div>';
+        }
+
+        if (actions.length === 0) {
+            html += '<div class="bulk-ops-placeholder">No actions proposed.</div>';
+            container.innerHTML = html;
+            return;
+        }
+
+        html += '<table class="bulk-ops-table">';
+        html += '<thead><tr>';
+        html += '<th><input type="checkbox" checked onchange="toggleAllBulkOps(this.checked)"></th>';
+        html += '<th>Action Description</th>';
+        html += '</tr></thead>';
+        html += '<tbody>';
+
+        for (var i = 0; i < actions.length; i++) {
+            html += '<tr>';
+            html += '<td><input type="checkbox" class="bulk-ops-checkbox" data-index="' + i + '" checked onchange="updateBulkOpsCount()"></td>';
+            html += '<td>';
+            html += '<div class="bulk-ops-description">' + escapeHtml(actions[i].description) + '</div>';
+            html += '<div class="bulk-ops-sql">' + escapeHtml(actions[i].sql) + '</div>';
+            html += '</td>';
+            html += '</tr>';
+        }
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    window.toggleAllBulkOps = function(checked) {
+        var boxes = document.querySelectorAll('.bulk-ops-checkbox');
+        for (var i = 0; i < boxes.length; i++) {
+            boxes[i].checked = checked;
+        }
+        updateBulkOpsCount();
+    };
+
+    window.updateBulkOpsCount = function() {
+        var boxes = document.querySelectorAll('.bulk-ops-checkbox');
+        var count = 0;
+        for (var i = 0; i < boxes.length; i++) {
+            if (boxes[i].checked) count++;
+        }
+
+        var countEl = document.getElementById('bulk-ops-count');
+        countEl.textContent = count + ' action' + (count !== 1 ? 's' : '') + ' selected';
+
+        var execBtn = document.getElementById('bulk-ops-execute-btn');
+        execBtn.textContent = 'Execute (' + count + ')';
+        execBtn.disabled = count === 0;
+    };
+
+    window.executeBulkOps = function() {
+        var boxes = document.querySelectorAll('.bulk-ops-checkbox');
+        var selected = [];
+        for (var i = 0; i < boxes.length; i++) {
+            if (boxes[i].checked) {
+                var idx = parseInt(boxes[i].dataset.index);
+                selected.push(proposedActions[idx]);
+            }
+        }
+
+        if (selected.length === 0) return;
+
+        var execBtn = document.getElementById('bulk-ops-execute-btn');
+        execBtn.disabled = true;
+        execBtn.textContent = 'Executing...';
+
+        var cancelBtn = document.querySelector('#bulk-ops-footer .btn-secondary');
+        cancelBtn.disabled = true;
+
+        fetch('/api/orders/ai-bulk-ops/execute', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actions: selected }),
+        })
+        .then(function(resp) {
+            if (!resp.ok) {
+                return resp.text().then(function(t) { throw new Error(t); });
+            }
+            return resp.json();
+        })
+        .then(function(data) {
+            didExecute = true;
+            renderResults(data);
+        })
+        .catch(function(err) {
+            var content = document.getElementById('bulk-ops-content');
+            content.innerHTML +=
+                '<div class="bulk-ops-result-message failure">' +
+                'Execution error: ' + escapeHtml(err.message) +
+                '</div>';
+        })
+        .finally(function() {
+            cancelBtn.disabled = false;
+        });
+    };
+
+    function renderResults(data) {
+        var content = document.getElementById('bulk-ops-content');
+        var footer = document.getElementById('bulk-ops-footer');
+
+        var html = '';
+
+        html += '<table class="bulk-ops-table">';
+        html += '<thead><tr>';
+        html += '<th></th>';
+        html += '<th>Action</th>';
+        html += '<th style="width: 80px; text-align: right;">Result</th>';
+        html += '</tr></thead>';
+        html += '<tbody>';
+
+        for (var i = 0; i < data.results.length; i++) {
+            var r = data.results[i];
+            var cls, icon, meta;
+
+            if (r.success) {
+                cls = 'bulk-ops-result-success';
+                icon = '&#10003;';
+                meta = r.rows_affected + ' row' + (r.rows_affected !== 1 ? 's' : '');
+            } else if (r.error && r.error.indexOf('skipped') !== -1) {
+                cls = 'bulk-ops-result-skip';
+                icon = '&mdash;';
+                meta = 'skipped';
+            } else {
+                cls = 'bulk-ops-result-fail';
+                icon = '&#10007;';
+                meta = 'Failed';
+            }
+
+            html += '<tr>';
+            html += '<td class="' + cls + '"><span class="bulk-ops-result-icon">' + icon + '</span></td>';
+            html += '<td>';
+            html += '<div class="bulk-ops-description">' + escapeHtml(r.description) + '</div>';
+            html += '<div class="bulk-ops-sql">' + escapeHtml(r.sql) + '</div>';
+            if (r.error && r.error.indexOf('skipped') === -1) {
+                html += '<div class="bulk-ops-result-error">' + escapeHtml(r.error) + '</div>';
+            }
+            html += '</td>';
+            html += '<td style="text-align: right;"><span class="bulk-ops-result-meta ' + cls + '">' + meta + '</span></td>';
+            html += '</tr>';
+        }
+
+        html += '</tbody></table>';
+
+        if (data.success) {
+            html += '<div class="bulk-ops-result-message success">' +
+                'All actions executed. Transaction committed.' +
+                '</div>';
+        } else {
+            html += '<div class="bulk-ops-result-message failure">' +
+                'One or more actions failed. Transaction rolled back — no changes were made.' +
+                '</div>';
+        }
+
+        content.innerHTML = html;
+
+        // Replace footer with just a Close button
+        footer.innerHTML =
+            '<span></span>' +
+            '<button class="btn btn-primary" onclick="closeBulkOpsModal()">Close</button>';
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (modal.style.display === 'none') return;
+
+        if (e.key === 'Escape') {
+            closeBulkOpsModal();
+        }
+
+        if (e.key === 'Enter' && e.target.id === 'bulk-ops-input') {
+            e.preventDefault();
+            generateBulkOps();
+        }
+    });
+
+    // Click backdrop to close
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeBulkOpsModal();
+        }
+    });
+})();
+
+
+// ============================================================
 // Shared utilities
 // ============================================================
 

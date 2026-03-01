@@ -76,6 +76,10 @@ func main() {
 	// AI-powered order filter
 	r.Post("/api/orders/ai-filter", h.HandleAIFilter)
 
+	// AI bulk operations
+	r.Post("/api/orders/ai-bulk-ops", h.HandleBulkOpsPropose)
+	r.Post("/api/orders/ai-bulk-ops/execute", h.HandleBulkOpsExecute)
+
 	// Product list for order form
 	r.Get("/api/products", h.HandleListProducts)
 

@@ -43,6 +43,12 @@ These are non-negotiable. See `docs/architecture-principles.md` for rationale.
 5. **CLI flags and TOML for config.** No environment variables. Config file
    path is itself a CLI flag. All programs support `--help`.
 
+## Prototypes
+
+Each prototype builds on the prior one unless otherwise instructed. Prototype-4
+has all features of prototype-3, prototype-3 has all features of prototype-2,
+etc.
+
 ## Code Style
 
 - Format Go with `gofmt`
