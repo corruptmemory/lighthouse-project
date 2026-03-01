@@ -47,8 +47,8 @@ Last updated: 2026-03-01
 
 ## Prototype-3 Architecture
 
-- Two pages, one binary: Orders (CRUD) at `/` and Dashboard (AI chat) at `/dashboard`
-- Shared sidebar with active nav state, shared `*sql.DB`
+- Two pages, one binary: Dashboard (AI chat) at `/` and Orders (CRUD) at `/orders`
+- Shared sidebar partial (`sidebar.html`), active nav state, shared `*sql.DB`
 - Orders page: htmx master-detail, filter/sort/CRUD, product autocomplete
 - Dashboard page: SSE streaming chat, SQL tool use, widget creation
 - Product autocomplete: vanilla JS, `/api/products?search=`, debounced, arrow keys
@@ -68,6 +68,15 @@ Last updated: 2026-03-01
   - All-or-nothing: `db.BeginTx` + `defer tx.Rollback()`, commit only if all succeed
   - `executeDML()` whitelists UPDATE/INSERT/DELETE, blocks DDL keywords
   - Works end-to-end, needs UX polish (next iteration)
+- Durable chat history: exchanges persisted to `chats/{session-id}/*.md`
+  - `writeChatExchange()` writes numbered markdown files (## Prompt + ## Messages JSON)
+  - `SessionStore.GetOrCreate()` restores message history from disk on reconnect
+  - `SessionStore.SaveExchange()` persists new messages after each agent loop
+  - Session recovery UI: JS fetches `/api/chat/sessions` on page load, shows
+    recovery card(s) with prompt preview + exchange count + relative timestamp
+  - "Continue" fetches `/api/chat/sessions/{id}/history`, restores visible chat
+    (clean text only, no tool-use blocks), sets JS `sessionId` for routing
+  - "New Conversation" dismisses card, restores welcome message
 
 ## Design Insights (confirmed across sessions)
 

@@ -10,8 +10,8 @@ coexist naturally in the same binary, sharing the same database.
 ## Architecture: Two Pages, One App
 
 ```
-GET /           → Orders page (master-detail, htmx CRUD)
-GET /dashboard  → Dashboard page (AI chat + widget panel)
+GET /           → Dashboard page (AI chat + widget panel)
+GET /orders     → Orders page (master-detail, htmx CRUD)
 ```
 
 Both pages share:
@@ -118,13 +118,41 @@ agent generates valid SQL with correct descriptions, transactions commit/rollbac
 properly, but the UX needs polish (action grouping, undo, progress feedback,
 partial selection defaults, etc.).
 
+### Durable chat history with session recovery
+
+Chat exchanges are persisted to `chats/{session-id}/*.md` files — same
+markdown-as-artifact pattern as widgets. Each exchange file has a `## Prompt`
+section and a `## Messages` JSON block containing the full Anthropic message
+history for that turn.
+
+On page load, JS fetches `/api/chat/sessions`. If previous sessions exist, a
+recovery card replaces the welcome message, showing the first prompt as a
+preview, the exchange count, and a relative timestamp. "Continue" fetches
+`/api/chat/sessions/{id}/history`, restores the visible chat (clean text
+responses only — tool-use blocks are filtered out), and sets the JS `sessionId`
+so subsequent messages route to the correct server-side session with full AI
+context. "New Conversation" dismisses the card and starts fresh.
+
+Key design choices:
+- The server extracts prompt + last assistant text per exchange for the UI
+  summary, using a marshal/unmarshal round-trip to handle the Anthropic SDK's
+  union types for message content blocks.
+- The recovery card is built entirely with safe DOM methods (`createElement`,
+  `textContent`) — no `innerHTML` with user data.
+- Session restoration is two-phase: the JS shows visible history immediately
+  (text only), while `SessionStore.GetOrCreate()` loads the full message
+  history (including tool_use blocks) server-side for AI context.
+
+### Sidebar template extraction
+
+The sidebar was duplicated across `layout.html` and `dashboard.html`. Now
+extracted into `sidebar.html` as a shared Go template partial. Both pages
+use `{{ template "sidebar" . }}` with a `.Page` field for active nav state.
+
 ## What's Still Rough
 
 - Widget iframe height is fixed; should auto-resize based on content
 - No error recovery if the AI generates invalid SQL in a widget
-- Chat history is in-memory per session; lost on server restart
-- The sidebar is duplicated in two templates (layout.html, dashboard.html)
-  rather than shared via template composition — acceptable for prototyping
 - Bulk operations modal needs UX refinement: action grouping, progress
   feedback, better default selection, undo capability
 
@@ -140,14 +168,16 @@ partial selection defaults, etc.).
 ### New for prototype-3
 - `db.go` — SQLite schema + seed data (orders, products, subscriptions)
 - `main.go` — chi router, Options struct, handler wiring
-- `handlers.go` — CRUD handlers + chat/widget handlers + product search
+- `handlers.go` — CRUD handlers + chat/widget handlers + product search + session recovery
 - `templates.go` — Go html/template loading and rendering
 - `systemprompt.go` — Dynamic system prompt with CRUD context
+- `chats.go` — Chat persistence: write/load/list exchanges, session summaries
 - `build.sh` — Single build entry point
 - `templates/layout.html` — Orders page (master-detail)
 - `templates/dashboard.html` — Dashboard page (chat + widgets)
+- `templates/sidebar.html` — Shared sidebar partial
 - `templates/order-form.html` — Order form with product autocomplete
 - `templates/order-detail.html` — Read-only order detail view
 - `templates/order-table.html` — Order table rows (htmx partial)
-- `static/app.js` — Chat/SSE/widget JS + autocomplete component
-- `static/app.css` — Full stylesheet (CRUD + chat + widgets + autocomplete)
+- `static/app.js` — Chat/SSE/widget JS + autocomplete + session recovery
+- `static/app.css` — Full stylesheet (CRUD + chat + widgets + autocomplete + recovery cards)
