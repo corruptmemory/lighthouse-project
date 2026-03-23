@@ -43,6 +43,17 @@ These are non-negotiable. See `docs/architecture-principles.md` for rationale.
 5. **CLI flags and TOML for config.** No environment variables. Config file
    path is itself a CLI flag. All programs support `--help`.
 
+## Prototypes
+
+Each prototype builds on the prior one unless otherwise instructed. Prototype-4
+has all features of prototype-3, prototype-3 has all features of prototype-2,
+etc.
+
+Starting with prototype-4:
+- Use templ (`github.com/a-h/templ`) for type-safe HTML templates
+- Use goldmark (`github.com/yuin/goldmark`) for markdown parsing instead of
+  regular expressions
+
 ## Code Style
 
 - Format Go with `gofmt`
@@ -54,6 +65,19 @@ These are non-negotiable. See `docs/architecture-principles.md` for rationale.
   systems, or collectible types.
 - Trademark fidelity: QUADRUM, QUICKSLAB, VOLTERRA, Drehgriffel, INTERCEPT®
   must maintain exact casing and spelling in all code, comments, and output.
+
+## Playwright Testing
+
+When running a web browser interactively via Playwright, always close tabs that
+you are not directly controlling so the user can clearly see your interaction
+with the application.
+
+## AI Memory
+
+Read `.claude/shared-memory.md` at session start for accumulated project
+knowledge (status, architecture decisions, design insights). That file is
+shared across machines via git. Machine-local notes live in the auto-memory
+directory (`~/.claude/projects/.../memory/`).
 
 ## Project Status
 

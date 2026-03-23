@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lighthouse ERP — Orders</title>
+    <link rel="stylesheet" href="/app.css">
+    <script src="/vendor/htmx.min.js"></script>
+</head>
+<body>
+    <div class="layout">
+        {{ template "sidebar" . }}
+
+        <main class="main">
+            <div class="master-detail">
+                <!-- Top pane: Order list -->
+                <div class="master-pane">
+                    <div class="filter-bar">
+                        <div class="filter-bar-top">
+                            <select class="filter-mode-select" id="filter-mode"
+                                    onchange="toggleFilterMode(this.value)">
+                                <option value="fields">Fields</option>
+                                <option value="ai">AI Filter</option>
+                            </select>
+                            <div class="filter-bar-actions">
+                                <button class="btn btn-secondary" onclick="openBulkOpsModal()">
+                                    AI Bulk Operations
+                                </button>
+                                <button class="btn btn-primary"
+                                        hx-get="/api/orders/new"
+                                        hx-target="#detail-pane">
+                                    + New Order
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="filter-controls" id="filters"
+                             hx-get="/api/orders"
+                             hx-trigger="input changed delay:300ms from:find input, change from:find select"
+                             hx-target="#order-table-body"
+                             hx-include="#filters">
+                            <input type="search" name="search" placeholder="Search orders or customers..." class="filter-input filter-search">
+                            <select name="status" class="filter-input filter-select">
+                                <option value="">All Statuses</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Shipped">Shipped</option>
+                                <option value="Delivered">Delivered</option>
+                                <option value="Return Requested">Return Requested</option>
+                                <option value="Confirmed">Confirmed</option>
+                            </select>
+                            <select name="brand" class="filter-input filter-select">
+                                <option value="">All Brands</option>
+                                <option value="Leuchtturm1917">Leuchtturm1917</option>
+                                <option value="Lighthouse Publications">Lighthouse Publications</option>
+                                <option value="Mixed">Mixed</option>
+                            </select>
+                            <input type="date" name="from" class="filter-input filter-date" title="From date">
+                            <input type="date" name="to" class="filter-input filter-date" title="To date">
+                        </div>
+
+                        <div class="filter-controls filter-ai-controls" id="ai-filters"
+                             style="display: none;">
+                            <input type="text" id="ai-filter-input"
+                                   placeholder="Describe which orders you're looking for..."
+                                   class="filter-input filter-ai-input">
+                            <button type="button" class="btn btn-primary"
+                                    id="ai-filter-btn" onclick="submitAIFilter()">
+                                Search
+                            </button>
+                        </div>
+                    </div>
+                    <div class="ai-explanation" id="ai-explanation" style="display: none;">
+                        <button class="ai-explanation-close" onclick="clearAIFilter()">&times;</button>
+                        <span id="ai-explanation-text"></span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="order-table">
+                            <thead>
+                                <tr>
+                                    {{- $sort := .SortCol }}
+                                    {{- $dir := .SortDir }}
+                                    {{- range $col := .Columns }}
+                                    <th class="sortable"
+                                        hx-get="/api/orders?sort={{ $col.Key }}&dir={{ nextDir $col.Key $sort $dir }}"
+                                        hx-target="#order-table-body"
+                                        hx-include="#filters">
+                                        {{ $col.Label }} {{ sortIcon $col.Key $sort $dir }}
+                                    </th>
+                                    {{- end }}
+                                </tr>
+                            </thead>
+                            <tbody id="order-table-body"
+                                   hx-get="/api/orders"
+                                   hx-trigger="refreshTable from:body"
+                                   hx-include="#filters">
+                                {{ template "order-rows" .Orders }}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Bottom pane: Order detail -->
+                <div class="detail-pane" id="detail-pane">
+                    <div class="detail-placeholder">
+                        <p>Select an order to view details</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+    // Row selection highlighting
+    document.addEventListener('htmx:afterRequest', function(e) {
+        var row = e.detail.elt;
+        if (row.classList && row.classList.contains('order-row')) {
+            document.querySelectorAll('.order-row.selected').forEach(function(r) {
+                r.classList.remove('selected');
+            });
+            row.classList.add('selected');
+        }
+    });
+    </script>
+    <!-- Bulk Operations Modal -->
+    <div class="modal-overlay" id="bulk-ops-modal" style="display: none;">
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h2>AI Bulk Operations</h2>
+                <button class="modal-close" onclick="closeBulkOpsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="bulk-ops-prompt-area">
+                    <label for="bulk-ops-input">Describe the changes:</label>
+                    <div class="bulk-ops-prompt-row">
+                        <input type="text" id="bulk-ops-input"
+                               placeholder="e.g., Divert overlapping items from Processing orders to Staples orders"
+                               class="filter-input bulk-ops-input">
+                        <button type="button" class="btn btn-primary" id="bulk-ops-generate-btn"
+                                onclick="generateBulkOps()">Generate</button>
+                    </div>
+                </div>
+                <div class="bulk-ops-content" id="bulk-ops-content">
+                    <div class="bulk-ops-placeholder">
+                        Describe what changes you want to make and click Generate.
+                        The AI will propose specific actions for your review.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="bulk-ops-footer" style="display: none;">
+                <span class="bulk-ops-count" id="bulk-ops-count">0 actions selected</span>
+                <div class="modal-footer-actions">
+                    <button class="btn btn-secondary" onclick="closeBulkOpsModal()">Cancel</button>
+                    <button class="btn btn-primary" id="bulk-ops-execute-btn"
+                            onclick="executeBulkOps()" disabled>Execute (0)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

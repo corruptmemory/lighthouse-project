@@ -1,0 +1,154 @@
+{{ define "order-form" }}
+<div class="detail-content">
+    <form {{ if .Order.OrderID }}
+          hx-put="/api/orders/{{ .Order.OrderID }}"
+          {{ else }}
+          hx-post="/api/orders"
+          {{ end }}
+          hx-target="#detail-pane"
+          hx-swap="innerHTML">
+
+        <div class="detail-header">
+            <div class="detail-title">
+                {{ if .Order.OrderID }}
+                <h2>Edit Order {{ .Order.OrderNumber }}</h2>
+                {{ else }}
+                <h2>New Order</h2>
+                {{ end }}
+            </div>
+            <div class="form-actions">
+                {{ if .Order.OrderID }}
+                <button type="button" class="btn btn-secondary"
+                        hx-get="/api/orders/{{ .Order.OrderID }}"
+                        hx-target="#detail-pane">
+                    Cancel
+                </button>
+                {{ else }}
+                <button type="button" class="btn btn-secondary"
+                        onclick="document.getElementById('detail-pane').innerHTML='<div class=\'detail-placeholder\'><p>Select an order to view details</p></div>'">
+                    Cancel
+                </button>
+                {{ end }}
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+
+        <div class="detail-grid">
+            <div class="detail-section">
+                <h3>Customer</h3>
+                <div class="form-field">
+                    <label for="customer_name">Name</label>
+                    <input type="text" id="customer_name" name="customer_name"
+                           value="{{ .Order.CustomerName }}" required>
+                </div>
+                <div class="form-field">
+                    <label for="customer_email">Email</label>
+                    <input type="email" id="customer_email" name="customer_email"
+                           value="{{ .Order.CustomerEmail }}" required>
+                </div>
+            </div>
+            <div class="detail-section">
+                <h3>Shipping</h3>
+                <div class="form-field">
+                    <label for="shipping_carrier">Carrier</label>
+                    <select id="shipping_carrier" name="shipping_carrier" required>
+                        <option value="">Select...</option>
+                        <option value="FedEx" {{ if eq .Order.ShippingCarrier "FedEx" }}selected{{ end }}>FedEx</option>
+                        <option value="UPS" {{ if eq .Order.ShippingCarrier "UPS" }}selected{{ end }}>UPS</option>
+                        <option value="USPS" {{ if eq .Order.ShippingCarrier "USPS" }}selected{{ end }}>USPS</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="shipping_method">Method</label>
+                    <select id="shipping_method" name="shipping_method" required>
+                        <option value="">Select...</option>
+                        <option value="Ground" {{ if eq .Order.ShippingMethod "Ground" }}selected{{ end }}>Ground</option>
+                        <option value="Priority" {{ if eq .Order.ShippingMethod "Priority" }}selected{{ end }}>Priority</option>
+                        <option value="Flat Rate" {{ if eq .Order.ShippingMethod "Flat Rate" }}selected{{ end }}>Flat Rate</option>
+                    </select>
+                </div>
+            </div>
+            <div class="detail-section">
+                <h3>Status</h3>
+                <div class="form-field">
+                    <label for="status">Status</label>
+                    <select id="status" name="status" required>
+                        <option value="Processing" {{ if eq .Order.Status "Processing" }}selected{{ end }}>Processing</option>
+                        <option value="Shipped" {{ if eq .Order.Status "Shipped" }}selected{{ end }}>Shipped</option>
+                        <option value="Delivered" {{ if eq .Order.Status "Delivered" }}selected{{ end }}>Delivered</option>
+                        <option value="Return Requested" {{ if eq .Order.Status "Return Requested" }}selected{{ end }}>Return Requested</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="order_date">Date</label>
+                    <input type="date" id="order_date" name="order_date"
+                           value="{{ inputDate .Order.OrderDate }}" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <div class="items-header">
+                <h3>Line Items</h3>
+                <button type="button" class="btn btn-small"
+                        onclick="addLineItem()">
+                    + Add Item
+                </button>
+            </div>
+            <table class="items-table" id="line-items-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th class="col-num">Qty</th>
+                        <th class="col-num">Unit Price</th>
+                        <th class="col-num">Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="line-items-body">
+                    {{ range $i, $item := .Items }}
+                    <tr class="line-item-row" data-index="{{ $i }}">
+                        <td>
+                            <input type="hidden" name="items[{{ $i }}].product_id" class="line-product-id" value="{{ $item.ProductID }}">
+                            <input type="text" class="line-product-search" value="{{ $item.ProductName }} ({{ $item.SKU }})" autocomplete="off">
+                            <div class="autocomplete-dropdown"></div>
+                        </td>
+                        <td class="col-num">
+                            <input type="number" name="items[{{ $i }}].quantity"
+                                   class="line-qty" value="{{ $item.Quantity }}"
+                                   min="1" required onchange="updateLineTotal(this)">
+                        </td>
+                        <td class="col-num line-price">{{ formatMoney $item.UnitPrice }}</td>
+                        <td class="col-num line-total">{{ formatMoney $item.LineTotal }}</td>
+                        <td>
+                            <button type="button" class="btn-remove" onclick="removeLineItem(this)">&times;</button>
+                        </td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="total-label">Order Total</td>
+                        <td class="col-num total-value" id="order-total">
+                            {{ formatMoney .Order.Total }}
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </form>
+</div>
+<script>
+// Set initial line index for addLineItem
+window._lineIndex = {{ len .Items }};
+// Init autocomplete on pre-existing rows
+document.querySelectorAll('.line-product-search').forEach(function(input) {
+    if (!input.dataset.acInit) {
+        input.dataset.acInit = '1';
+        window.initProductAutocomplete(input);
+    }
+});
+</script>
+{{ end }}
+{{ template "order-form" . }}

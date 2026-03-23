@@ -6,6 +6,8 @@ mockups/*.png
 
 # Prototype build artifacts
 prototype-1/bin/
+prototype-2/bin/
+prototype-2/widgets/
 
 # Test screenshots
 *.png
